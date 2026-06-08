@@ -35,6 +35,11 @@ Contribution rules:
 
 ## Security And Data
 
+Canonical security policy and reporting:
+
+- [`SECURITY.md`](SECURITY.md)
+
+
 Scraped listings and generated datasets should be treated as data artifacts with
 provenance. Do not add private purchase records or credentials.
 
