@@ -1,5 +1,6 @@
 import os
 import sys
+import ast
 from operator import itemgetter
 
 f = open("diamonds.txt","r")
@@ -66,8 +67,19 @@ def quality(x):
         'N' : 6,
     }[x]
 
+def parse_diamond_line(line, line_number):
+    try:
+        parsed = ast.literal_eval(line)
+    except (SyntaxError, ValueError) as e:
+        raise ValueError("Invalid diamond data on line %d: %s" % (line_number, e))
+
+    if not isinstance(parsed, dict):
+        raise ValueError("Invalid diamond data on line %d: expected a dictionary" % line_number)
+
+    return parsed
+
 for i in range(0,len(lines)):
-    lines[i] = eval(lines[i])
+    lines[i] = parse_diamond_line(lines[i], i + 1)
     lines[i]['shape'] = shape(lines[i]['shape'])
     lines[i]['vendor_id'] = int(lines[i]['vendor_id'])
     lines[i]['price'] = int(lines[i]['price'])
@@ -94,4 +106,3 @@ for i in range(0,len(lines)):
         str(lines[i]['pol'])+"," +
         str(lines[i]['price'])
         )
-
