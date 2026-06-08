@@ -46,3 +46,6 @@ Parsing changes should avoid executing untrusted input as code.
 - More scraping without data-source and terms notes
 - Model rewrites that cannot reproduce a baseline result
 - Parser changes that keep executing untrusted text
+
+This list is a roadmap guardrail, not a permanent rule.
+Strong user demand and strong technical rationale can change it.
