@@ -1,5 +1,8 @@
 ## Diamond Cost Predictor Vision
 
+This document explains the current state and direction of the project.
+Project overview and developer docs: [`README.md`](README.md)
+
 Diamond Cost Predictor is a Python 2-era set of scripts for scraping diamond
 listing data, normalizing fields, and fitting a linear regression model through
 R/rpy2.
