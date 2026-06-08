@@ -7,6 +7,7 @@ VISION="$ROOT_DIR/VISION.md"
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
+SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
 
 require_file() {
   path=$1
@@ -26,6 +27,7 @@ for path in \
   "lm.py" \
   "scripts/check-baseline.sh" \
   "scripts/test-safe-parsing.py" \
+  "scripts/test-psdownload.py" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"; do
   require_file "$path"
@@ -88,7 +90,8 @@ for ignored in "diamonds.txt" "prediction.pdf"; do
   fi
 done
 
-python3 -m py_compile "$PARSER" "$TESTS" "$ROOT_DIR/psdownload.py" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
+python3 -m py_compile "$PARSER" "$TESTS" "$SCRAPER_TESTS" "$ROOT_DIR/psdownload.py" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
 python3 "$TESTS"
+python3 "$SCRAPER_TESTS"
 
 printf '%s\n' "Diamond safe parsing baseline checks passed."

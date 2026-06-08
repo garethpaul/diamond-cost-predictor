@@ -1,0 +1,59 @@
+#!/usr/bin/env python3
+import importlib.util
+import pathlib
+import tempfile
+import unittest
+from urllib.parse import parse_qs, urlparse
+
+
+ROOT_DIR = pathlib.Path(__file__).resolve().parents[1]
+SCRAPER_MODULE_PATH = ROOT_DIR / 'psdownload.py'
+
+
+def load_scraper_module():
+    spec = importlib.util.spec_from_file_location('diamond_psdownload', SCRAPER_MODULE_PATH)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+psdownload = load_scraper_module()
+
+
+class PriceScopeDownloadTests(unittest.TestCase):
+    def test_build_url_encodes_query_arguments(self):
+        url = psdownload.build_url('BR', 0.25, 0.255, 3)
+        parsed = urlparse(url)
+        query = parse_qs(parsed.query, keep_blank_values=True)
+
+        self.assertEqual(parsed.scheme, 'http')
+        self.assertEqual(parsed.netloc, 'www.pricescope.com')
+        self.assertEqual(query['shape'], ['BR'])
+        self.assertEqual(query['size__gte'], ['0.25'])
+        self.assertEqual(query['size__lte'], ['0.255'])
+        self.assertEqual(query['page'], ['3'])
+        self.assertEqual(query['lab'], ['GIA', 'AGS'])
+        self.assertEqual(query['color_p'], ['H+'])
+
+    def test_parse_total_falls_back_on_unexpected_markup(self):
+        self.assertEqual(psdownload.parse_total('We have 42 <b>diamonds</b>', 500), 42)
+        self.assertEqual(psdownload.parse_total('No count here', 17), 17)
+
+    def test_parse_args_exposes_timeout_and_output_defaults(self):
+        args = psdownload.parse_args(['0.25', '0.30'])
+
+        self.assertEqual(args.min_carat, 0.25)
+        self.assertEqual(args.max_carat, 0.30)
+        self.assertEqual(args.output, 'diamonds.txt')
+        self.assertEqual(args.timeout, psdownload.DEFAULT_TIMEOUT)
+
+    def test_write_diamonds_writes_one_record_per_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            psdownload.write_diamonds(output, ['first', 'second'])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'first\nsecond\n')
+
+
+if __name__ == '__main__':
+    unittest.main()

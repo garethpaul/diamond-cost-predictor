@@ -66,9 +66,10 @@ Run the safe parsing baseline before committing parser or data-shape changes:
 scripts/check-baseline.sh
 ```
 
-The guard compiles the Python scripts, runs parser regression tests, verifies
-that scraped diamond records are parsed with `ast.literal_eval` instead of
-`eval`, and checks that scraper downloads set a timeout.
+The guard compiles the Python scripts, runs parser and scraper helper
+regression tests, verifies that scraped diamond records are parsed with
+`ast.literal_eval` instead of `eval`, and checks that scraper downloads set a
+timeout.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

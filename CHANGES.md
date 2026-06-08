@@ -6,5 +6,6 @@
 - Added focused parser regression tests for valid records, malicious non-literal input, missing fields, and unknown codes.
 - Added `scripts/check-baseline.sh` as the local safe-parsing verification gate.
 - Added timeout-aware scraper downloads and explicit CLI arguments.
+- Added no-network scraper helper regression tests.
 - Updated the source guard to compile all Python scripts under Python 3.
 - Ignored generated `diamonds.txt` and `prediction.pdf` outputs.

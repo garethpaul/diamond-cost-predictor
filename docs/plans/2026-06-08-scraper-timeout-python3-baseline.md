@@ -26,9 +26,10 @@ ignored.
 
 - R1. Network downloads must set a timeout.
 - R2. Scraper inputs and output path must be explicit command-line arguments.
-- R3. All checked-in Python scripts must compile under Python 3.
-- R4. Generated scraper/model outputs must be ignored.
-- R5. README, changelog, and guard script must document and verify the broader
+- R3. Scraper helper behavior must be covered without making network calls.
+- R4. All checked-in Python scripts must compile under Python 3.
+- R5. Generated scraper/model outputs must be ignored.
+- R6. README, changelog, and guard script must document and verify the broader
   source baseline.
 
 ## Implementation Units
@@ -46,13 +47,20 @@ ignored.
 - **Files:** `csv.py`, `psdownload.py`, `graph.py`, `lm.py`
 - **Verification:** `python3 -m py_compile ...`
 
-### U3. Generated Output Hygiene
+### U3. Scraper Regression Tests
+
+- **Goal:** Verify URL encoding, total parsing, CLI defaults, and output writing
+  without live network access.
+- **Files:** `scripts/test-psdownload.py`, `scripts/check-baseline.sh`
+- **Verification:** `python3 scripts/test-psdownload.py`
+
+### U4. Generated Output Hygiene
 
 - **Goal:** Keep local scraper/model outputs out of source control.
 - **Files:** `.gitignore`
 - **Verification:** `scripts/check-baseline.sh`
 
-### U4. Documentation And Guard
+### U5. Documentation And Guard
 
 - **Goal:** Make the baseline repeatable for future data/model changes.
 - **Files:** `README.md`, `CHANGES.md`, `scripts/check-baseline.sh`, this plan
