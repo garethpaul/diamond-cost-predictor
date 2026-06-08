@@ -23,7 +23,7 @@ Next priorities:
 
 - Add README setup, data-source, and reproduction instructions
 - Port scripts to a supported Python version in a dedicated pass
-- Replace `eval`-based parsing with structured data loading
+- Keep structured diamond record parsing covered by regression tests
 - Add checks around input files, field conversion, and model output
 
 Contribution rules:

@@ -11,15 +11,17 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 
 ## Repository Contents
 
-- `.worktrees` - source or example code
+- `CHANGES.md` - maintenance history
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
+- `csv.py` - converts scraped diamond record literals into numeric CSV rows
+- `scripts/check-baseline.sh` - source-level safe parsing guard
 
 Additional scan context:
 
-- Source directories: .worktrees
+- Source directories: scripts
 - Dependency and build manifests: none detected
-- Entry points or build surfaces: none detected
+- Entry points or build surfaces: `csv.py`, `scripts/check-baseline.sh`
 - Test-looking files: no obvious test files detected
 
 ## Getting Started
@@ -39,11 +41,26 @@ The setup commands above are derived from repository files. Legacy mobile, Pytho
 
 ## Running or Using the Project
 
-- No single runtime entry point was identified. Start by reading the source files and manifests listed above.
+Convert scraped `diamonds.txt` records to numeric CSV rows with:
+
+```bash
+python3 csv.py diamonds.txt > output.csv
+```
+
+The modeling scripts are still Python 2-era and depend on R/rpy2. Keep runtime
+changes scoped and document the exact Python/R environment used when updating
+that path.
 
 ## Testing and Verification
 
-- No dedicated automated test command was identified from the checked-in files. Verify changes by running the relevant build or manually exercising the sample.
+Run the safe parsing baseline before committing parser or data-shape changes:
+
+```bash
+scripts/check-baseline.sh
+```
+
+The guard compiles `csv.py`, runs parser regression tests, and verifies that
+scraped diamond records are parsed with `ast.literal_eval` instead of `eval`.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -62,6 +79,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
+- See `CHANGES.md` for maintenance history.
 
 ## Contributing
 
