@@ -3,6 +3,7 @@ import importlib.util
 import pathlib
 import tempfile
 import unittest
+from urllib.error import URLError
 from urllib.parse import parse_qs, urlparse
 
 
@@ -26,7 +27,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
         parsed = urlparse(url)
         query = parse_qs(parsed.query, keep_blank_values=True)
 
-        self.assertEqual(parsed.scheme, 'http')
+        self.assertEqual(parsed.scheme, 'https')
         self.assertEqual(parsed.netloc, 'www.pricescope.com')
         self.assertEqual(query['shape'], ['BR'])
         self.assertEqual(query['size__gte'], ['0.25'])
@@ -34,6 +35,10 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertEqual(query['page'], ['3'])
         self.assertEqual(query['lab'], ['GIA', 'AGS'])
         self.assertEqual(query['color_p'], ['H+'])
+
+    def test_pricescope_endpoint_requires_https(self):
+        with self.assertRaises(ValueError):
+            psdownload.pricescope_ajax_url('http://www.pricescope.com/results/ajax/')
 
     def test_parse_total_falls_back_on_unexpected_markup(self):
         self.assertEqual(psdownload.parse_total('We have 42 <b>diamonds</b>', 500), 42)
@@ -53,6 +58,18 @@ class PriceScopeDownloadTests(unittest.TestCase):
             psdownload.write_diamonds(output, ['first', 'second'])
 
             self.assertEqual(output.read_text(encoding='utf-8'), 'first\nsecond\n')
+
+    def test_read_lines_handles_url_errors(self):
+        original_urlopen = psdownload.urlopen
+
+        def failing_urlopen(url, timeout):
+            raise URLError('offline')
+
+        psdownload.urlopen = failing_urlopen
+        try:
+            self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+        finally:
+            psdownload.urlopen = original_urlopen
 
 
 if __name__ == '__main__':

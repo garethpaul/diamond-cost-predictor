@@ -28,6 +28,7 @@ for path in \
   "scripts/check-baseline.sh" \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
+  "docs/plans/2026-06-08-pricescope-https-baseline.md" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"; do
   require_file "$path"
@@ -63,6 +64,11 @@ if ! grep -Fq "ast.literal_eval" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "https://www.pricescope.com/results/ajax/" "$README"; then
+  printf '%s\n' "README must document the HTTPS PriceScope endpoint." >&2
+  exit 1
+fi
+
 if ! grep -Fq "avoid executing untrusted input as code" "$VISION"; then
   printf '%s\n' "VISION.md must keep the parser safety direction visible." >&2
   exit 1
@@ -75,6 +81,26 @@ fi
 
 if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'DEFAULT_PRICESCOPE_AJAX_URL = "https://www.pricescope.com/results/ajax/"' "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must default to the HTTPS PriceScope endpoint." >&2
+  exit 1
+fi
+
+if grep -Fq "http://www.pricescope.com/results/ajax/" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must not use the plain-HTTP PriceScope endpoint." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'endpoint.lower().startswith("https://")' "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject non-HTTPS endpoint overrides." >&2
+  exit 1
+fi
+
+if ! grep -Fq "except (TimeoutError, socket.timeout, URLError)" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must handle timeout and URL failures at page scope." >&2
   exit 1
 fi
 

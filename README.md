@@ -49,11 +49,15 @@ Convert scraped `diamonds.txt` records to numeric CSV rows with:
 python3 csv.py diamonds.txt > output.csv
 ```
 
-Download a bounded PriceScope carat range with an explicit timeout:
+Download a bounded PriceScope carat range with HTTPS and an explicit timeout:
 
 ```bash
 python3 psdownload.py 0.25 0.30 --output diamonds.txt --timeout 15
 ```
+
+The downloader defaults to `https://www.pricescope.com/results/ajax/` and rejects
+non-HTTPS endpoint overrides. Use `--endpoint` or `PRICESCOPE_AJAX_URL` only for
+HTTPS-compatible test endpoints.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
@@ -68,8 +72,8 @@ scripts/check-baseline.sh
 
 The guard compiles the Python scripts, runs parser and scraper helper
 regression tests, verifies that scraped diamond records are parsed with
-`ast.literal_eval` instead of `eval`, and checks that scraper downloads set a
-timeout.
+`ast.literal_eval` instead of `eval`, and checks that scraper downloads use
+HTTPS with a timeout.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -79,16 +83,20 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 ## Security and Privacy Notes
 
-- Review changes touching network requests, sockets, or service endpoints; examples from the scan include .worktrees/fix/issue-2-safe-diamond-parsing/docs/plans/2026-06-08-issue-2-safe-diamond-parsing.md, .worktrees/fix/issue-2-safe-diamond-parsing/psdownload.py, .worktrees/fix/issue-5-urlopen-timeout/docs/plans/2026-06-08-issue-5-urlopen-timeout.md, .worktrees/fix/issue-5-urlopen-timeout/psdownload.py, and 2 more.
-- Review changes touching file, media, JSON, XML, CSV, OCR, or data parsing; examples from the scan include .worktrees/fix/issue-2-safe-diamond-parsing/docs/plans/2026-06-08-issue-2-safe-diamond-parsing.md, .worktrees/fix/issue-2-safe-diamond-parsing/graph.py, .worktrees/fix/issue-2-safe-diamond-parsing/psdownload.py, .worktrees/fix/issue-2-safe-diamond-parsing/scripts/check-safe-parsing.sh, and 5 more.
-- Review changes touching shell execution, subprocess, or dynamic evaluation; examples from the scan include .worktrees/fix/issue-2-safe-diamond-parsing/docs/plans/2026-06-08-issue-2-safe-diamond-parsing.md, .worktrees/fix/issue-2-safe-diamond-parsing/scripts/check-safe-parsing.sh, .worktrees/fix/issue-5-urlopen-timeout/csv.py, csv.py.
-- Review changes touching database, model, or persistence code; examples from the scan include .worktrees/fix/issue-2-safe-diamond-parsing/docs/plans/2026-06-08-issue-2-safe-diamond-parsing.md, .worktrees/fix/issue-2-safe-diamond-parsing/graph.py, .worktrees/fix/issue-5-urlopen-timeout/graph.py, graph.py.
+- `csv.py` parses downloaded records with `ast.literal_eval` and rejects unsafe
+  non-literal input.
+- `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
+  handles page-level timeout or URL errors.
+- Review changes touching network requests, downloaded data, model formulas, or
+  generated datasets carefully.
 
 ## Maintenance Notes
 
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for maintenance history.
+- See `docs/plans/2026-06-08-pricescope-https-baseline.md` for the HTTPS
+  downloader hardening follow-up.
 - `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by
   default.
 

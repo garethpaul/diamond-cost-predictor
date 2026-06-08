@@ -27,9 +27,11 @@ ignored.
 - R1. Network downloads must set a timeout.
 - R2. Scraper inputs and output path must be explicit command-line arguments.
 - R3. Scraper helper behavior must be covered without making network calls.
-- R4. All checked-in Python scripts must compile under Python 3.
-- R5. Generated scraper/model outputs must be ignored.
-- R6. README, changelog, and guard script must document and verify the broader
+- R4. PriceScope requests must default to HTTPS and reject plain-HTTP endpoint
+  overrides.
+- R5. All checked-in Python scripts must compile under Python 3.
+- R6. Generated scraper/model outputs must be ignored.
+- R7. README, changelog, and guard script must document and verify the broader
   source baseline.
 
 ## Implementation Units
@@ -40,27 +42,35 @@ ignored.
 - **Files:** `psdownload.py`
 - **Verification:** `scripts/check-baseline.sh`
 
-### U2. Python 3 Syntax Baseline
+### U2. HTTPS Endpoint Guard
+
+- **Goal:** Avoid plain-HTTP PriceScope requests and reject insecure endpoint
+  overrides.
+- **Files:** `psdownload.py`, `scripts/test-psdownload.py`,
+  `scripts/check-baseline.sh`
+- **Verification:** `python3 scripts/test-psdownload.py`
+
+### U3. Python 3 Syntax Baseline
 
 - **Goal:** Ensure parser, scraper, and modeling scripts parse on the available
   Python runtime.
 - **Files:** `csv.py`, `psdownload.py`, `graph.py`, `lm.py`
 - **Verification:** `python3 -m py_compile ...`
 
-### U3. Scraper Regression Tests
+### U4. Scraper Regression Tests
 
-- **Goal:** Verify URL encoding, total parsing, CLI defaults, and output writing
-  without live network access.
+- **Goal:** Verify URL encoding, total parsing, CLI defaults, page-level URL
+  failure handling, and output writing without live network access.
 - **Files:** `scripts/test-psdownload.py`, `scripts/check-baseline.sh`
 - **Verification:** `python3 scripts/test-psdownload.py`
 
-### U4. Generated Output Hygiene
+### U5. Generated Output Hygiene
 
 - **Goal:** Keep local scraper/model outputs out of source control.
 - **Files:** `.gitignore`
 - **Verification:** `scripts/check-baseline.sh`
 
-### U5. Documentation And Guard
+### U6. Documentation And Guard
 
 - **Goal:** Make the baseline repeatable for future data/model changes.
 - **Files:** `README.md`, `CHANGES.md`, `scripts/check-baseline.sh`, this plan

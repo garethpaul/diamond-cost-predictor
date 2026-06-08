@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 import argparse
+import os
+import socket
+from urllib.error import URLError
 from urllib.parse import urlencode
 from urllib.request import urlopen
 
 
 DIAMOND_TYPES = ["BR", "PR", "EM", "OV", "MQ", "PS", "AS", "CU", "RA", "HS"]
+DEFAULT_PRICESCOPE_AJAX_URL = "https://www.pricescope.com/results/ajax/"
 DEFAULT_STEP = 0.005
 DEFAULT_TIMEOUT = 15
 
@@ -16,7 +20,14 @@ def drange(start, stop, step):
         current += step
 
 
-def build_url(shape, lower_size, upper_size, page):
+def pricescope_ajax_url(endpoint=None):
+    endpoint = endpoint or os.environ.get("PRICESCOPE_AJAX_URL", DEFAULT_PRICESCOPE_AJAX_URL)
+    if not endpoint.lower().startswith("https://"):
+        raise ValueError("PriceScope endpoint must use HTTPS")
+    return endpoint.rstrip("?")
+
+
+def build_url(shape, lower_size, upper_size, page, endpoint=None):
     query = [
         ("vendor__latitude__gte", "-180"),
         ("type_color", "1"),
@@ -58,12 +69,16 @@ def build_url(shape, lower_size, upper_size, page):
         ("sort", "size"),
         ("page", str(page)),
     ]
-    return "http://www.pricescope.com/results/ajax/?" + urlencode(query)
+    return pricescope_ajax_url(endpoint) + "?" + urlencode(query)
 
 
 def read_lines(url, timeout):
-    with urlopen(url, timeout=timeout) as response:
-        return response.read().decode("utf-8", "replace").splitlines()
+    try:
+        with urlopen(url, timeout=timeout) as response:
+            return response.read().decode("utf-8", "replace").splitlines()
+    except (TimeoutError, socket.timeout, URLError) as exc:
+        print("   Failed to download page: {0}".format(exc))
+        return []
 
 
 def parse_total(line, fallback):
@@ -73,7 +88,7 @@ def parse_total(line, fallback):
         return fallback
 
 
-def collect_diamonds(min_carat, max_carat, timeout):
+def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
     diamonds = []
     found_total = 0
     upper_bound = max_carat - DEFAULT_STEP
@@ -94,7 +109,7 @@ def collect_diamonds(min_carat, max_carat, timeout):
                     continue
 
                 print("   Downloading page {0}/20".format(page))
-                lines = read_lines(build_url(diamond_type, lower_size, upper_size, page), timeout)
+                lines = read_lines(build_url(diamond_type, lower_size, upper_size, page, endpoint), timeout)
                 found_data_marker = False
 
                 for line in lines:
@@ -123,12 +138,18 @@ def parse_args(argv=None):
     parser.add_argument("max_carat", type=float)
     parser.add_argument("--output", default="diamonds.txt")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
+    parser.add_argument("--endpoint", default=None, help="HTTPS PriceScope AJAX endpoint override")
     return parser.parse_args(argv)
 
 
 def main(argv=None):
     args = parse_args(argv)
-    diamonds, found_total = collect_diamonds(args.min_carat, args.max_carat, args.timeout)
+    diamonds, found_total = collect_diamonds(
+        args.min_carat,
+        args.max_carat,
+        args.timeout,
+        endpoint=args.endpoint,
+    )
     print(
         "Found a total of {0} diamonds out of {1} diamonds reported".format(
             len(diamonds), found_total
