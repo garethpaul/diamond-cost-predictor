@@ -57,6 +57,26 @@ class SafeParsingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             diamond_csv.parse_diamond_line(line)
 
+    def test_rejects_non_finite_numeric_fields(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': '42', 'carat': 'nan', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': '225'}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
+    def test_rejects_non_positive_price(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': '42', 'carat': '0.28', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': '0'}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
 
 if __name__ == '__main__':
     unittest.main()

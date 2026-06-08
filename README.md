@@ -73,7 +73,9 @@ scripts/check-baseline.sh
 The guard compiles the Python scripts, runs parser and scraper helper
 regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout.
+HTTPS with a timeout. Parser tests also reject non-finite or non-positive
+numeric model inputs, so generated CSV rows contain finite positive numeric
+values for carat, depth, table, and price.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -85,6 +87,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - `csv.py` parses downloaded records with `ast.literal_eval` and rejects unsafe
   non-literal input.
+- Numeric parser validation rejects non-finite or non-positive model inputs
+  before they are written to generated CSV rows.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
   handles page-level timeout or URL errors.
 - Review changes touching network requests, downloaded data, model formulas, or

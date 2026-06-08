@@ -5,6 +5,7 @@ ROOT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 README="$ROOT_DIR/README.md"
 VISION="$ROOT_DIR/VISION.md"
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"
+NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-08-numeric-field-validation.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -29,6 +30,7 @@ for path in \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
   "docs/plans/2026-06-08-pricescope-https-baseline.md" \
+  "docs/plans/2026-06-08-numeric-field-validation.md" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"; do
   require_file "$path"
@@ -54,6 +56,16 @@ if ! grep -Fq "__import__('os').system" "$TESTS"; then
   exit 1
 fi
 
+if ! grep -Fq "test_rejects_non_finite_numeric_fields" "$TESTS" || ! grep -Fq "test_rejects_non_positive_price" "$TESTS"; then
+  printf '%s\n' "Parser tests must cover invalid numeric model inputs." >&2
+  exit 1
+fi
+
+if ! grep -Fq "math.isfinite" "$PARSER" || ! grep -Fq "def positive_int" "$PARSER"; then
+  printf '%s\n' "csv.py must validate finite positive numeric model inputs." >&2
+  exit 1
+fi
+
 if ! grep -Fq "scripts/check-baseline.sh" "$README"; then
   printf '%s\n' "README must document the baseline guard." >&2
   exit 1
@@ -61,6 +73,11 @@ fi
 
 if ! grep -Fq "ast.literal_eval" "$README"; then
   printf '%s\n' "README must document the safe parsing baseline." >&2
+  exit 1
+fi
+
+if ! grep -Fq "finite positive" "$README"; then
+  printf '%s\n' "README must document numeric field validation." >&2
   exit 1
 fi
 
@@ -76,6 +93,11 @@ fi
 
 if ! grep -Fq "status: completed" "$PLAN"; then
   printf '%s\n' "Plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$NUMERIC_PLAN"; then
+  printf '%s\n' "Numeric validation plan must be marked completed." >&2
   exit 1
 fi
 

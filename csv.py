@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import ast
+import math
 import sys
 from operator import itemgetter
 
@@ -124,16 +125,28 @@ def parse_diamond_line(line):
         'table': numeric_text(record['table'], 'table'),
         'sym': quality(record['sym']),
         'pol': quality(record['pol']),
-        'price': int(record['price']),
+        'price': positive_int(record['price'], 'price'),
     }
 
 
 def numeric_text(value, field_name):
     try:
-        float(value)
+        number = float(value)
     except (TypeError, ValueError):
         raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
+    if not math.isfinite(number) or number <= 0:
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
     return str(value)
+
+
+def positive_int(value, field_name):
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
+    if number <= 0:
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
+    return number
 
 
 def load_records(path):

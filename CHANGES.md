@@ -11,3 +11,5 @@
 - Updated the source guard to compile all Python scripts under Python 3.
 - Ignored generated `diamonds.txt` and `prediction.pdf` outputs.
 - Enforced HTTPS PriceScope downloader endpoints and added page-level URL error handling.
+- Added parser validation for finite positive numeric fields and regression
+  coverage for non-finite values and non-positive prices.

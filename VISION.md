@@ -27,7 +27,7 @@ Next priorities:
 - Add README setup, data-source, and reproduction instructions
 - Port scripts to a supported Python version in a dedicated pass
 - Keep structured diamond record parsing covered by regression tests
-- Add checks around input files, field conversion, and model output
+- Add checks around input files and model output
 
 Contribution rules:
 
