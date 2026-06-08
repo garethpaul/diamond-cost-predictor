@@ -29,6 +29,8 @@ Additional scan context:
 ### Prerequisites
 
 - Git
+- Python 3.12 or newer for parser, scraper, and source baseline checks
+- R and rpy2 for the modeling/graph scripts when regenerating model outputs
 
 ### Setup
 
@@ -47,9 +49,14 @@ Convert scraped `diamonds.txt` records to numeric CSV rows with:
 python3 csv.py diamonds.txt > output.csv
 ```
 
-The modeling scripts are still Python 2-era and depend on R/rpy2. Keep runtime
-changes scoped and document the exact Python/R environment used when updating
-that path.
+Download a bounded PriceScope carat range with an explicit timeout:
+
+```bash
+python3 psdownload.py 0.25 0.30 --output diamonds.txt --timeout 15
+```
+
+The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
+document the exact Python/R environment used when updating that path.
 
 ## Testing and Verification
 
@@ -59,8 +66,9 @@ Run the safe parsing baseline before committing parser or data-shape changes:
 scripts/check-baseline.sh
 ```
 
-The guard compiles `csv.py`, runs parser regression tests, and verifies that
-scraped diamond records are parsed with `ast.literal_eval` instead of `eval`.
+The guard compiles the Python scripts, runs parser regression tests, verifies
+that scraped diamond records are parsed with `ast.literal_eval` instead of
+`eval`, and checks that scraper downloads set a timeout.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -80,6 +88,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `SECURITY.md` for vulnerability reporting and safe research guidance.
 - See `VISION.md` for project direction and contribution guardrails.
 - See `CHANGES.md` for maintenance history.
+- `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by
+  default.
 
 ## Contributing
 

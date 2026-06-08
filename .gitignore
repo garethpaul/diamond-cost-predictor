@@ -89,3 +89,7 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Generated scraper/model outputs
+diamonds.txt
+prediction.pdf

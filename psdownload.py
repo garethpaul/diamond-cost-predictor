@@ -1,86 +1,142 @@
-import os
-import urllib
-import pdb
-import sys
-import math
-import threading
-import collections
+#!/usr/bin/env python3
+import argparse
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-min = float(sys.argv[1])
-max = float(sys.argv[2])
+
+DIAMOND_TYPES = ["BR", "PR", "EM", "OV", "MQ", "PS", "AS", "CU", "RA", "HS"]
+DEFAULT_STEP = 0.005
+DEFAULT_TIMEOUT = 15
+
 
 def drange(start, stop, step):
-    r = start
-    while r < stop:
-        yield r
-        r += step
-
-step = {}
-pages = collections.defaultdict(dict)
-diamonds = {}
-foundtotal = 0
-
-dtype = ["BR","PR","EM","OV","MQ","PS","AS","CU","RA","HS"]
-# Step 0.005 to make sure we get less than 20 pages of results
-step = 0.005
-
-print "Finding all diamonds carat sized " + str(min) + " to " + str(max)
-max = max - step
-
-for t in dtype:
-    inc = -1
-    print "Finding diamonds of shape " + t 
-    gen = drange(min,max+step*0.01,step*2)
-
-    for j in gen:
-        inc+=1
-    
-        totalq = 500
-        print "Downloading diamonds carat sized " + str(j) + " to " + str(j+step)
-        #download 20 pages (max) of results
-        for i in range(1,21):
-            if (25*(i-1) > totalq):
-                print "   Skipping page " + str(i) + "/20"
-                continue
-            print "   Downloading page " + str(i) + "/20"
-            pages[t][i+inc] = urllib.urlopen((
-                "http://www.pricescope.com/results/ajax/?" 
-                "vendor__latitude__gte=-180&type_color=1&vendor__region__contains=&clarity__lte=27&vendor__longitude__gte=-180" 
-                "&shape=" + t + "&price__lte=999999&city=Richmond&hca_index__lte=10&search_key=sk_session_3068" 
-                "&size__lte=" + str(j+step) +
-                "&l_country=us&price__gte=100&vln_l_ct=180&latitude=37.5522003174" 
-                "&size__gte=" + str(j) +
-                "&vlt_g_ct=-180&clarity__gte=1&color_m=G-&l_region=VA&search=&lab=GIA&lab=AGS&type_search=1"
-                "&vendor__latitude__lte=180"
-                "&color_p=H%2B" 
-                "&color__lte=I" 
-                "&vendor__country__contains=&f=3&hca_index__gte=0&region=VA&vendor__longitude__lte=180&longitude=-77.4581985474"
-                "&country=us&vln_g_ct=-180"
-                "&color__gte=D"
-                "&vlt_l_ct=180&sort=size"
-                "&page="+str(i)
-                )).readlines()
-            found = 0
-            for line in pages[t][i+inc]:
-                if line.find("diamond-data") > 0:
-                    found = 1
-                elif found == 1:
-                    found = 0
-                    diamonds[len(diamonds)] = line.strip()
-                elif line.find("We have ") > 0:
-                    wehave = line.split("have ")[1].split("<b>")[0].strip()
-                    totalq = int(wehave)
-        foundtotal += totalq
-
-print "Found a total of " + str(len(diamonds)) + " diamonds out of " + str(foundtotal) + " diamonds reported"
-print "       "
-
-f = open('diamonds.txt', 'w')
-for i in diamonds:
-    f.write(str(diamonds[i])+"\n")
-f.close()
+    current = start
+    while current < stop:
+        yield current
+        current += step
 
 
-#print "Entering interactive debugger"
-#pdb.set_trace()
+def build_url(shape, lower_size, upper_size, page):
+    query = [
+        ("vendor__latitude__gte", "-180"),
+        ("type_color", "1"),
+        ("vendor__region__contains", ""),
+        ("clarity__lte", "27"),
+        ("vendor__longitude__gte", "-180"),
+        ("shape", shape),
+        ("price__lte", "999999"),
+        ("city", "Richmond"),
+        ("hca_index__lte", "10"),
+        ("search_key", "sk_session_3068"),
+        ("size__lte", str(upper_size)),
+        ("l_country", "us"),
+        ("price__gte", "100"),
+        ("vln_l_ct", "180"),
+        ("latitude", "37.5522003174"),
+        ("size__gte", str(lower_size)),
+        ("vlt_g_ct", "-180"),
+        ("clarity__gte", "1"),
+        ("color_m", "G-"),
+        ("l_region", "VA"),
+        ("search", ""),
+        ("lab", "GIA"),
+        ("lab", "AGS"),
+        ("type_search", "1"),
+        ("vendor__latitude__lte", "180"),
+        ("color_p", "H+"),
+        ("color__lte", "I"),
+        ("vendor__country__contains", ""),
+        ("f", "3"),
+        ("hca_index__gte", "0"),
+        ("region", "VA"),
+        ("vendor__longitude__lte", "180"),
+        ("longitude", "-77.4581985474"),
+        ("country", "us"),
+        ("vln_g_ct", "-180"),
+        ("color__gte", "D"),
+        ("vlt_l_ct", "180"),
+        ("sort", "size"),
+        ("page", str(page)),
+    ]
+    return "http://www.pricescope.com/results/ajax/?" + urlencode(query)
 
+
+def read_lines(url, timeout):
+    with urlopen(url, timeout=timeout) as response:
+        return response.read().decode("utf-8", "replace").splitlines()
+
+
+def parse_total(line, fallback):
+    try:
+        return int(line.split("have ")[1].split("<b>")[0].strip())
+    except (IndexError, ValueError):
+        return fallback
+
+
+def collect_diamonds(min_carat, max_carat, timeout):
+    diamonds = []
+    found_total = 0
+    upper_bound = max_carat - DEFAULT_STEP
+
+    print("Finding all diamonds carat sized {0} to {1}".format(min_carat, max_carat))
+
+    for diamond_type in DIAMOND_TYPES:
+        print("Finding diamonds of shape {0}".format(diamond_type))
+
+        for lower_size in drange(min_carat, upper_bound + DEFAULT_STEP * 0.01, DEFAULT_STEP * 2):
+            total_for_query = 500
+            upper_size = lower_size + DEFAULT_STEP
+            print("Downloading diamonds carat sized {0} to {1}".format(lower_size, upper_size))
+
+            for page in range(1, 21):
+                if 25 * (page - 1) > total_for_query:
+                    print("   Skipping page {0}/20".format(page))
+                    continue
+
+                print("   Downloading page {0}/20".format(page))
+                lines = read_lines(build_url(diamond_type, lower_size, upper_size, page), timeout)
+                found_data_marker = False
+
+                for line in lines:
+                    if "diamond-data" in line:
+                        found_data_marker = True
+                    elif found_data_marker:
+                        found_data_marker = False
+                        diamonds.append(line.strip())
+                    elif "We have " in line:
+                        total_for_query = parse_total(line, total_for_query)
+
+            found_total += total_for_query
+
+    return diamonds, found_total
+
+
+def write_diamonds(path, diamonds):
+    with open(path, "w", encoding="utf-8") as diamond_file:
+        for diamond in diamonds:
+            diamond_file.write(str(diamond) + "\n")
+
+
+def parse_args(argv=None):
+    parser = argparse.ArgumentParser(description="Download PriceScope diamond listings.")
+    parser.add_argument("min_carat", type=float)
+    parser.add_argument("max_carat", type=float)
+    parser.add_argument("--output", default="diamonds.txt")
+    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
+    return parser.parse_args(argv)
+
+
+def main(argv=None):
+    args = parse_args(argv)
+    diamonds, found_total = collect_diamonds(args.min_carat, args.max_carat, args.timeout)
+    print(
+        "Found a total of {0} diamonds out of {1} diamonds reported".format(
+            len(diamonds), found_total
+        )
+    )
+    print("       ")
+    write_diamonds(args.output, diamonds)
+
+
+if __name__ == "__main__":
+    main()

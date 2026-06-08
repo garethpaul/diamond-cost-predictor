@@ -15,9 +15,9 @@ stats = importr('stats')
 graphics = importr('graphics')
 
 labels = "carat,color,clarity,depth,table,sym,pol,price"
-print "Opening File"
-f = open("output.csv")
-lines = f.readlines()
+print("Opening File")
+with open("output.csv") as f:
+    lines = f.readlines()
 carat = []
 color = []
 clarity = []
@@ -32,7 +32,7 @@ for line in lines:
     sym.append(ls[7])
     pol.append(ls[8])
     price.append(ls[9])
-print "Finished importing the file"
+print("Finished importing the file")
 
 carat = ro.FloatVector(carat)
 color = ro.IntVector(color)
@@ -47,28 +47,28 @@ ro.globalenv["sym"] = sym
 ro.globalenv["pol"] = pol
 ro.globalenv["price"] = price
 
-print "Building Model"
+print("Building Model")
 res = stats.lm("price ~ carat + color + clarity")
-print "Finished building the model"
+print("Finished building the model")
 print(res)
-print "Building prediction"
+print("Building prediction")
 pred = stats.predict(res)
-print "Finished building prediction"
+print("Finished building prediction")
 summary = r_base.summary(res)
-print "Results from prediction"
-print summary
+print("Results from prediction")
+print(summary)
 ars = "Adjusted R Squared = " + str(round(summary[8][0],2))
-print "Finding Coefficients"
+print("Finding Coefficients")
 coef = summary.rx2('coefficients')[0:6]
 formula = "Price = " + str(int(round(coef[0]))) + " + " + str(int(round(coef[1]))) + "*Carats + " + str(int(round(coef[2]))) + "*Color + " + str(int(round(coef[3]))) + "*Clarity" 
-print formula
+print(formula)
 
-print "Comparing Actual to Predicted Price Fit"
+print("Comparing Actual to Predicted Price Fit")
 ro.globalenv["pred"] = pred
 comp = stats.lm("pred ~ price")
 
 
-print "Writing graph to pdf"
+print("Writing graph to pdf")
 ro.r.pdf('prediction.pdf')
 ro.r.plot([x for x in pred],[y for y in price], main="Actual vs Predicted Price",xlab="Predicted Price",ylab="Actual Price", cex=0.5)
 ro.r.abline(comp,col="green",lty="dotted",lwd=3)
@@ -86,5 +86,4 @@ if len(sys.argv)>4:
 ro.r.legend("top",legend=[formula,ars,"Sample Size = " + str(len(price))+" Diamonds"], bg = "white")
 
 ro.r('dev.off()')
-print "Finished!"
-
+print("Finished!")

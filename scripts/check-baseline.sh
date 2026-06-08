@@ -21,8 +21,12 @@ for path in \
   "VISION.md" \
   "SECURITY.md" \
   "csv.py" \
+  "psdownload.py" \
+  "graph.py" \
+  "lm.py" \
   "scripts/check-baseline.sh" \
   "scripts/test-safe-parsing.py" \
+  "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"; do
   require_file "$path"
 done
@@ -67,7 +71,24 @@ if ! grep -Fq "status: completed" "$PLAN"; then
   exit 1
 fi
 
-python3 -m py_compile "$PARSER" "$TESTS"
+if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
+  exit 1
+fi
+
+if ! grep -Fq "argparse.ArgumentParser" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must expose explicit CLI arguments." >&2
+  exit 1
+fi
+
+for ignored in "diamonds.txt" "prediction.pdf"; do
+  if ! grep -Fq "$ignored" "$ROOT_DIR/.gitignore"; then
+    printf '%s\n' ".gitignore must ignore generated $ignored" >&2
+    exit 1
+  fi
+done
+
+python3 -m py_compile "$PARSER" "$TESTS" "$ROOT_DIR/psdownload.py" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
 python3 "$TESTS"
 
 printf '%s\n' "Diamond safe parsing baseline checks passed."
