@@ -44,7 +44,7 @@ for t in dtype:
                 continue
             print "   Downloading page " + str(i) + "/20"
             pages[t][i+inc] = urllib.urlopen((
-                "http://www.pricescope.com/results/ajax/?" 
+                "https://www.pricescope.com/results/ajax/?"
                 "vendor__latitude__gte=-180&type_color=1&vendor__region__contains=&clarity__lte=27&vendor__longitude__gte=-180" 
                 "&shape=" + t + "&price__lte=999999&city=Richmond&hca_index__lte=10&search_key=sk_session_3068" 
                 "&size__lte=" + str(j+step) +
@@ -83,4 +83,3 @@ f.close()
 
 #print "Entering interactive debugger"
 #pdb.set_trace()
-
