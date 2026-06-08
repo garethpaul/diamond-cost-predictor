@@ -40,7 +40,7 @@ provenance. Do not add private purchase records or credentials.
 
 Parsing changes should avoid executing untrusted input as code.
 
-## What We Will Not Merge For Now
+## What We Will Not Merge (For Now)
 
 - Private or unattributed datasets
 - More scraping without data-source and terms notes
