@@ -1,13 +1,25 @@
 import os
-import urllib
+import socket
+import urllib2
 import pdb
 import sys
 import math
 import threading
 import collections
 
+DOWNLOAD_TIMEOUT_SECONDS = 10
+
 min = float(sys.argv[1])
 max = float(sys.argv[2])
+
+def download_page(url):
+    try:
+        return urllib2.urlopen(url, timeout=DOWNLOAD_TIMEOUT_SECONDS).readlines()
+    except socket.timeout as e:
+        print "   Timed out downloading page: " + str(e)
+    except urllib2.URLError as e:
+        print "   Failed to download page: " + str(e)
+    return []
 
 def drange(start, stop, step):
     r = start
@@ -43,7 +55,7 @@ for t in dtype:
                 print "   Skipping page " + str(i) + "/20"
                 continue
             print "   Downloading page " + str(i) + "/20"
-            pages[t][i+inc] = urllib.urlopen((
+            pages[t][i+inc] = download_page((
                 "http://www.pricescope.com/results/ajax/?" 
                 "vendor__latitude__gte=-180&type_color=1&vendor__region__contains=&clarity__lte=27&vendor__longitude__gte=-180" 
                 "&shape=" + t + "&price__lte=999999&city=Richmond&hca_index__lte=10&search_key=sk_session_3068" 
@@ -59,7 +71,7 @@ for t in dtype:
                 "&color__gte=D"
                 "&vlt_l_ct=180&sort=size"
                 "&page="+str(i)
-                )).readlines()
+                ))
             found = 0
             for line in pages[t][i+inc]:
                 if line.find("diamond-data") > 0:
@@ -83,4 +95,3 @@ f.close()
 
 #print "Entering interactive debugger"
 #pdb.set_trace()
-
