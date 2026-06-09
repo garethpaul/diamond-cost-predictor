@@ -107,6 +107,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
+- The write helper also validates output paths before opening files.
 - Review changes touching network requests, downloaded data, model formulas, or
   generated datasets carefully.
 
