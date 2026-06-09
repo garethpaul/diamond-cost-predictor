@@ -60,8 +60,8 @@ The downloader defaults to `https://www.pricescope.com/results/ajax/` and reject
 non-HTTPS endpoint overrides. Use `--endpoint` or `PRICESCOPE_AJAX_URL` only for
 HTTPS-compatible test endpoints with an explicit host and no embedded
 credentials, query string, or fragment.
-Scraper arguments reject non-positive carat values, ranges where `max_carat` is
-not greater than `min_carat`, and non-positive download timeouts before making
+Scraper arguments reject non-finite or non-positive carat values and timeouts,
+plus ranges where `max_carat` is not greater than `min_carat`, before making
 requests. The CLI also rejects blank output paths before any download loop is
 started.
 

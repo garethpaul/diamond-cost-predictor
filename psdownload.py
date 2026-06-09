@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import math
 import os
 import socket
 from urllib.error import URLError
@@ -94,11 +95,13 @@ def parse_total(line, fallback):
 
 
 def validate_scrape_args(min_carat, max_carat, timeout):
-    if min_carat <= 0:
+    if not math.isfinite(min_carat) or min_carat <= 0:
         raise ValueError("min_carat must be positive")
+    if not math.isfinite(max_carat) or max_carat <= 0:
+        raise ValueError("max_carat must be positive")
     if max_carat <= min_carat:
         raise ValueError("max_carat must be greater than min_carat")
-    if timeout <= 0:
+    if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("timeout must be positive")
 
 

@@ -83,8 +83,15 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertParseArgsExits(['0', '0.30'])
         self.assertParseArgsExits(['0.30', '0.25'])
 
+    def test_parse_args_rejects_non_finite_carat_ranges(self):
+        self.assertParseArgsExits(['nan', '0.30'])
+        self.assertParseArgsExits(['0.25', 'inf'])
+
     def test_parse_args_rejects_non_positive_timeout(self):
         self.assertParseArgsExits(['0.25', '0.30', '--timeout', '0'])
+
+    def test_parse_args_rejects_non_finite_timeout(self):
+        self.assertParseArgsExits(['0.25', '0.30', '--timeout', 'nan'])
 
     def test_parse_args_rejects_blank_output_path(self):
         self.assertParseArgsExits(['0.25', '0.30', '--output', ''])
@@ -93,6 +100,8 @@ class PriceScopeDownloadTests(unittest.TestCase):
     def test_collect_diamonds_validates_arguments_before_network(self):
         with self.assertRaises(ValueError):
             psdownload.collect_diamonds(0.25, 0.30, 0)
+        with self.assertRaises(ValueError):
+            psdownload.collect_diamonds(float('nan'), 0.30, 1)
 
     def test_write_diamonds_writes_one_record_per_line(self):
         with tempfile.TemporaryDirectory() as directory:

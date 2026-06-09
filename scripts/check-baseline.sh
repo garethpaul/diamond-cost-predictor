@@ -9,6 +9,7 @@ NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-08-numeric-field-validation.md"
 CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-diamond-check-wrapper.md"
 OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-path-validation.md"
 OUTPUT_HELPER_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-helper-validation.md"
+FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument-validation.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -40,6 +41,7 @@ for path in \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md" \
   "docs/plans/2026-06-09-scraper-argument-validation.md" \
   "docs/plans/2026-06-09-scraper-endpoint-validation.md" \
+  "docs/plans/2026-06-09-scraper-finite-argument-validation.md" \
   "docs/plans/2026-06-09-output-helper-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
@@ -135,6 +137,11 @@ if ! grep -Fq "blank output paths" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "non-finite or non-positive carat values and timeouts" "$README"; then
+  printf '%s\n' "README must document finite scraper argument validation." >&2
+  exit 1
+fi
+
 if ! grep -Fq "write helper also validates output paths" "$README"; then
   printf '%s\n' "README must document helper-level output path validation." >&2
   exit 1
@@ -152,6 +159,11 @@ fi
 
 if ! grep -Fq "Validate scraper output paths" "$VISION"; then
   printf '%s\n' "VISION.md must keep scraper output path validation visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Validate scraper numeric arguments as finite values" "$VISION"; then
+  printf '%s\n' "VISION.md must keep finite scraper argument validation visible." >&2
   exit 1
 fi
 
@@ -210,6 +222,16 @@ if ! grep -Fq "make check" "$OUTPUT_HELPER_PLAN"; then
   exit 1
 fi
 
+if ! grep -Fq "Status: Completed" "$FINITE_SCRAPER_ARG_PLAN"; then
+  printf '%s\n' "Finite scraper argument validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$FINITE_SCRAPER_ARG_PLAN"; then
+  printf '%s\n' "Finite scraper argument validation plan must record make check verification." >&2
+  exit 1
+fi
+
 if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
   exit 1
@@ -261,6 +283,13 @@ if ! grep -Fq "max_carat must be greater than min_carat" "$ROOT_DIR/psdownload.p
   exit 1
 fi
 
+if ! grep -Fq "math.isfinite(min_carat)" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "math.isfinite(max_carat)" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "math.isfinite(timeout)" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject non-finite scraper arguments before scraping." >&2
+  exit 1
+fi
+
 if ! grep -Fq "timeout must be positive" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must reject non-positive timeouts before scraping." >&2
   exit 1
@@ -287,8 +316,18 @@ if ! grep -Fq "test_parse_args_rejects_invalid_carat_ranges" "$SCRAPER_TESTS"; t
   exit 1
 fi
 
+if ! grep -Fq "test_parse_args_rejects_non_finite_carat_ranges" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover non-finite carat range arguments." >&2
+  exit 1
+fi
+
 if ! grep -Fq "test_parse_args_rejects_non_positive_timeout" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover non-positive timeout arguments." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_parse_args_rejects_non_finite_timeout" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover non-finite timeout arguments." >&2
   exit 1
 fi
 

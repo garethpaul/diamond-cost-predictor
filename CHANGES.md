@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Rejected non-finite scraper carat and timeout arguments before starting
+  PriceScope download loops.
 - Validated direct `write_diamonds` output paths before opening files.
 - Rejected blank scraper output paths before starting PriceScope download
   loops and exposed a Python compile `make build` gate.
