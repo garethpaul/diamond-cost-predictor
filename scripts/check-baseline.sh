@@ -35,7 +35,8 @@ for path in \
   "docs/plans/2026-06-08-pricescope-https-baseline.md" \
   "docs/plans/2026-06-08-numeric-field-validation.md" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
-  "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"; do
+  "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md" \
+  "docs/plans/2026-06-09-scraper-argument-validation.md"; do
   require_file "$path"
 done
 
@@ -131,6 +132,16 @@ if ! grep -Fq "status: completed" "$CHECK_PLAN"; then
   exit 1
 fi
 
+if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-scraper-argument-validation.md"; then
+  printf '%s\n' "Scraper argument validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-scraper-argument-validation.md"; then
+  printf '%s\n' "Scraper argument validation plan must record make check verification." >&2
+  exit 1
+fi
+
 if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
   exit 1
@@ -158,6 +169,36 @@ fi
 
 if ! grep -Fq "argparse.ArgumentParser" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must expose explicit CLI arguments." >&2
+  exit 1
+fi
+
+if ! grep -Fq "def validate_scrape_args" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must share scraper argument validation across CLI and helpers." >&2
+  exit 1
+fi
+
+if ! grep -Fq "max_carat must be greater than min_carat" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject invalid carat ranges before scraping." >&2
+  exit 1
+fi
+
+if ! grep -Fq "timeout must be positive" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject non-positive timeouts before scraping." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_parse_args_rejects_invalid_carat_ranges" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover invalid carat range arguments." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_parse_args_rejects_non_positive_timeout" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover non-positive timeout arguments." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_collect_diamonds_validates_arguments_before_network" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover direct helper argument validation." >&2
   exit 1
 fi
 

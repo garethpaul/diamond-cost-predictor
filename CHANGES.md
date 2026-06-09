@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-09
+
+- Rejected invalid scraper carat ranges and non-positive timeouts before
+  starting PriceScope download loops.
+
 ## 2026-06-08
 
 - Added a root `make check` wrapper for the safe parsing and scraper tests.

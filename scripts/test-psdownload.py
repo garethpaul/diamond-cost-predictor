@@ -52,6 +52,20 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertEqual(args.output, 'diamonds.txt')
         self.assertEqual(args.timeout, psdownload.DEFAULT_TIMEOUT)
 
+    def test_parse_args_rejects_invalid_carat_ranges(self):
+        with self.assertRaises(SystemExit):
+            psdownload.parse_args(['0', '0.30'])
+        with self.assertRaises(SystemExit):
+            psdownload.parse_args(['0.30', '0.25'])
+
+    def test_parse_args_rejects_non_positive_timeout(self):
+        with self.assertRaises(SystemExit):
+            psdownload.parse_args(['0.25', '0.30', '--timeout', '0'])
+
+    def test_collect_diamonds_validates_arguments_before_network(self):
+        with self.assertRaises(ValueError):
+            psdownload.collect_diamonds(0.25, 0.30, 0)
+
     def test_write_diamonds_writes_one_record_per_line(self):
         with tempfile.TemporaryDirectory() as directory:
             output = pathlib.Path(directory) / 'diamonds.txt'

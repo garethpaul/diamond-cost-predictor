@@ -88,7 +88,18 @@ def parse_total(line, fallback):
         return fallback
 
 
+def validate_scrape_args(min_carat, max_carat, timeout):
+    if min_carat <= 0:
+        raise ValueError("min_carat must be positive")
+    if max_carat <= min_carat:
+        raise ValueError("max_carat must be greater than min_carat")
+    if timeout <= 0:
+        raise ValueError("timeout must be positive")
+
+
 def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
+    validate_scrape_args(min_carat, max_carat, timeout)
+
     diamonds = []
     found_total = 0
     upper_bound = max_carat - DEFAULT_STEP
@@ -139,7 +150,12 @@ def parse_args(argv=None):
     parser.add_argument("--output", default="diamonds.txt")
     parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT)
     parser.add_argument("--endpoint", default=None, help="HTTPS PriceScope AJAX endpoint override")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    try:
+        validate_scrape_args(args.min_carat, args.max_carat, args.timeout)
+    except ValueError as exc:
+        parser.error(str(exc))
+    return args
 
 
 def main(argv=None):

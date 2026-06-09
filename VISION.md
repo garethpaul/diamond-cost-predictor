@@ -20,6 +20,7 @@ Priority:
 - Preserve the raw CSV data, transformation scripts, and modeling scripts
 - Keep Python 2 and rpy2/R assumptions visible
 - Avoid hiding generated outputs or scraped-data provenance
+- Validate scraper ranges before downloading data
 - Keep the model formula and graph generation easy to inspect
 
 Next priorities:
