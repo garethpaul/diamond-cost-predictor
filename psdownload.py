@@ -103,7 +103,8 @@ def validate_scrape_args(min_carat, max_carat, timeout):
 
 
 def validate_output_path(path):
-    if not path or not path.strip():
+    path_text = os.fspath(path) if path is not None else ""
+    if not path_text or not path_text.strip():
         raise ValueError("output path must not be blank")
 
 
@@ -148,6 +149,7 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
 
 
 def write_diamonds(path, diamonds):
+    validate_output_path(path)
     with open(path, "w", encoding="utf-8") as diamond_file:
         for diamond in diamonds:
             diamond_file.write(str(diamond) + "\n")

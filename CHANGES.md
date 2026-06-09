@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Validated direct `write_diamonds` output paths before opening files.
 - Rejected blank scraper output paths before starting PriceScope download
   loops and exposed a Python compile `make build` gate.
 - Rejected malformed PriceScope endpoint overrides that lack an HTTPS host,

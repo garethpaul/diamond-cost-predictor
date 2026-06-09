@@ -101,6 +101,10 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
             self.assertEqual(output.read_text(encoding='utf-8'), 'first\nsecond\n')
 
+    def test_write_diamonds_rejects_blank_output_path(self):
+        with self.assertRaises(ValueError):
+            psdownload.write_diamonds('   ', [])
+
     def test_read_lines_handles_url_errors(self):
         original_urlopen = psdownload.urlopen
 

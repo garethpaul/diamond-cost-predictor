@@ -85,7 +85,8 @@ helper regression tests, verifies that scraped diamond records are parsed with
 HTTPS with a timeout. Parser tests also reject non-finite or non-positive
 numeric model inputs, so generated CSV rows contain finite positive numeric
 values for carat, depth, table, vendor ID, and price. Scraper tests reject
-blank output paths before network work starts.
+blank output paths before network work starts, and the write helper also
+validates output paths before opening files.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -104,7 +105,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
-- `psdownload.py` rejects blank output paths before scraping.
+- `psdownload.py` rejects blank output paths before scraping, and the write
+  helper also validates output paths before opening files.
 - Review changes touching network requests, downloaded data, model formulas, or
   generated datasets carefully.
 
@@ -115,6 +117,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - See `CHANGES.md` for maintenance history.
 - See `docs/plans/2026-06-08-pricescope-https-baseline.md` for the HTTPS
   downloader hardening follow-up.
+- See `docs/plans/2026-06-09-output-helper-validation.md` for helper-level
+  output path validation.
 - `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by
   default.
 
