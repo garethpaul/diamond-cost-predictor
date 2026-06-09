@@ -67,6 +67,26 @@ class SafeParsingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             diamond_csv.parse_diamond_line(line)
 
+    def test_rejects_boolean_numeric_fields(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': '42', 'carat': True, "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': '225'}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
+    def test_rejects_boolean_integer_fields(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': True, 'carat': '0.28', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': '225'}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
     def test_rejects_non_positive_price(self):
         line = (
             "{'shape': 'PR', 'vendor_id': '42', 'carat': '0.28', "

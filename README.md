@@ -82,11 +82,11 @@ Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout. Parser tests also reject non-finite or non-positive
-numeric model inputs, so generated CSV rows contain finite positive numeric
-values for carat, depth, table, vendor ID, and price. Scraper tests reject
-blank output paths before network work starts, and the write helper also
-validates output paths before opening files.
+HTTPS with a timeout. Parser tests also reject boolean literals and non-finite
+or non-positive numeric model inputs, so generated CSV rows contain finite positive
+numeric values for carat, depth, table, vendor ID, and price. Scraper
+tests reject blank output paths before network work starts, and the write
+helper also validates output paths before opening files.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -99,7 +99,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `csv.py` parses downloaded records with `ast.literal_eval` and rejects unsafe
   non-literal input.
 - Numeric parser validation rejects non-finite or non-positive model inputs
-  before they are written to generated CSV rows.
+  and boolean literals before they are written to generated CSV rows.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.

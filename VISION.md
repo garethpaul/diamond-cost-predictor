@@ -24,6 +24,7 @@ Priority:
 - Validate scraper numeric arguments as finite values before downloading data
 - Validate scraper endpoint overrides before downloading data
 - Validate scraper output paths before downloading data and direct file writes
+- Reject boolean literals in numeric diamond fields before model generation
 - Keep the model formula and graph generation easy to inspect
 
 Next priorities:

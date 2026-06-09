@@ -10,6 +10,7 @@ CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-diamond-check-wrapper.md"
 OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-path-validation.md"
 OUTPUT_HELPER_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-helper-validation.md"
 FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument-validation.md"
+BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-validation.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -43,6 +44,7 @@ for path in \
   "docs/plans/2026-06-09-scraper-endpoint-validation.md" \
   "docs/plans/2026-06-09-scraper-finite-argument-validation.md" \
   "docs/plans/2026-06-09-output-helper-validation.md" \
+  "docs/plans/2026-06-09-boolean-numeric-field-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -68,6 +70,8 @@ if ! grep -Fq "__import__('os').system" "$TESTS"; then
 fi
 
 if ! grep -Fq "test_rejects_non_finite_numeric_fields" "$TESTS" || \
+  ! grep -Fq "test_rejects_boolean_numeric_fields" "$TESTS" || \
+  ! grep -Fq "test_rejects_boolean_integer_fields" "$TESTS" || \
   ! grep -Fq "test_rejects_non_positive_price" "$TESTS" || \
   ! grep -Fq "test_rejects_non_positive_vendor_id" "$TESTS"; then
   printf '%s\n' "Parser tests must cover invalid numeric model inputs." >&2
@@ -76,6 +80,11 @@ fi
 
 if ! grep -Fq "math.isfinite" "$PARSER" || ! grep -Fq "def positive_int" "$PARSER"; then
   printf '%s\n' "csv.py must validate finite positive numeric model inputs." >&2
+  exit 1
+fi
+
+if ! grep -Fq "isinstance(value, bool)" "$PARSER"; then
+  printf '%s\n' "csv.py must reject boolean literals for numeric model inputs." >&2
   exit 1
 fi
 
@@ -112,6 +121,11 @@ fi
 
 if ! grep -Fq "finite positive" "$README"; then
   printf '%s\n' "README must document numeric field validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "boolean literals" "$README"; then
+  printf '%s\n' "README must document boolean numeric field rejection." >&2
   exit 1
 fi
 
@@ -164,6 +178,11 @@ fi
 
 if ! grep -Fq "Validate scraper numeric arguments as finite values" "$VISION"; then
   printf '%s\n' "VISION.md must keep finite scraper argument validation visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Reject boolean literals in numeric diamond fields" "$VISION"; then
+  printf '%s\n' "VISION.md must keep boolean numeric field validation visible." >&2
   exit 1
 fi
 
@@ -229,6 +248,16 @@ fi
 
 if ! grep -Fq "make check" "$FINITE_SCRAPER_ARG_PLAN"; then
   printf '%s\n' "Finite scraper argument validation plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Status: Completed" "$BOOLEAN_NUMERIC_PLAN"; then
+  printf '%s\n' "Boolean numeric field validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$BOOLEAN_NUMERIC_PLAN"; then
+  printf '%s\n' "Boolean numeric field validation plan must record make check verification." >&2
   exit 1
 fi
 

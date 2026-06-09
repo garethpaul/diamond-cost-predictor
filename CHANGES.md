@@ -2,6 +2,7 @@
 
 ## 2026-06-09
 
+- Rejected boolean literals for parsed numeric diamond model fields.
 - Rejected non-finite scraper carat and timeout arguments before starting
   PriceScope download loops.
 - Validated direct `write_diamonds` output paths before opening files.

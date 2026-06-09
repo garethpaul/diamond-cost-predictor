@@ -130,6 +130,8 @@ def parse_diamond_line(line):
 
 
 def numeric_text(value, field_name):
+    if isinstance(value, bool):
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
     try:
         number = float(value)
     except (TypeError, ValueError):
@@ -140,6 +142,8 @@ def numeric_text(value, field_name):
 
 
 def positive_int(value, field_name):
+    if isinstance(value, bool):
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
     try:
         number = int(value)
     except (TypeError, ValueError):
