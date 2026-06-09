@@ -86,6 +86,10 @@ class PriceScopeDownloadTests(unittest.TestCase):
     def test_parse_args_rejects_non_positive_timeout(self):
         self.assertParseArgsExits(['0.25', '0.30', '--timeout', '0'])
 
+    def test_parse_args_rejects_blank_output_path(self):
+        self.assertParseArgsExits(['0.25', '0.30', '--output', ''])
+        self.assertParseArgsExits(['0.25', '0.30', '--output', '   '])
+
     def test_collect_diamonds_validates_arguments_before_network(self):
         with self.assertRaises(ValueError):
             psdownload.collect_diamonds(0.25, 0.30, 0)

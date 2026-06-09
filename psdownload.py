@@ -102,6 +102,11 @@ def validate_scrape_args(min_carat, max_carat, timeout):
         raise ValueError("timeout must be positive")
 
 
+def validate_output_path(path):
+    if not path or not path.strip():
+        raise ValueError("output path must not be blank")
+
+
 def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
     validate_scrape_args(min_carat, max_carat, timeout)
 
@@ -158,6 +163,7 @@ def parse_args(argv=None):
     args = parser.parse_args(argv)
     try:
         validate_scrape_args(args.min_carat, args.max_carat, args.timeout)
+        validate_output_path(args.output)
     except ValueError as exc:
         parser.error(str(exc))
     return args
