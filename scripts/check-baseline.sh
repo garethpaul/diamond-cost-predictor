@@ -7,6 +7,7 @@ VISION="$ROOT_DIR/VISION.md"
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"
 NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-08-numeric-field-validation.md"
 CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-diamond-check-wrapper.md"
+OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-path-validation.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -37,7 +38,8 @@ for path in \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md" \
   "docs/plans/2026-06-09-scraper-argument-validation.md" \
-  "docs/plans/2026-06-09-scraper-endpoint-validation.md"; do
+  "docs/plans/2026-06-09-scraper-endpoint-validation.md" \
+  "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
 
@@ -93,6 +95,12 @@ if ! grep -Fq "check: verify" "$ROOT_DIR/Makefile"; then
   exit 1
 fi
 
+if ! grep -Fq "build:" "$ROOT_DIR/Makefile" || \
+  ! grep -Fq "verify: lint test build" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose build and include it in verification." >&2
+  exit 1
+fi
+
 if ! grep -Fq "ast.literal_eval" "$README"; then
   printf '%s\n' "README must document the safe parsing baseline." >&2
   exit 1
@@ -120,6 +128,11 @@ if ! grep -Fq "explicit host" "$README" ||
   exit 1
 fi
 
+if ! grep -Fq "blank output paths" "$README"; then
+  printf '%s\n' "README must document scraper output path validation." >&2
+  exit 1
+fi
+
 if ! grep -Fq "avoid executing untrusted input as code" "$VISION"; then
   printf '%s\n' "VISION.md must keep the parser safety direction visible." >&2
   exit 1
@@ -127,6 +140,11 @@ fi
 
 if ! grep -Fq "Validate scraper endpoint overrides" "$VISION"; then
   printf '%s\n' "VISION.md must keep scraper endpoint validation visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Validate scraper output paths" "$VISION"; then
+  printf '%s\n' "VISION.md must keep scraper output path validation visible." >&2
   exit 1
 fi
 
@@ -162,6 +180,16 @@ fi
 
 if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-scraper-endpoint-validation.md"; then
   printf '%s\n' "Scraper endpoint validation plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$OUTPUT_PLAN"; then
+  printf '%s\n' "Scraper output path validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$OUTPUT_PLAN"; then
+  printf '%s\n' "Scraper output path validation plan must record make check verification." >&2
   exit 1
 fi
 
@@ -221,6 +249,16 @@ if ! grep -Fq "timeout must be positive" "$ROOT_DIR/psdownload.py"; then
   exit 1
 fi
 
+if ! grep -Fq "def validate_output_path" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must validate scraper output paths before scraping." >&2
+  exit 1
+fi
+
+if ! grep -Fq "output path must not be blank" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject blank output paths before scraping." >&2
+  exit 1
+fi
+
 if ! grep -Fq "test_parse_args_rejects_invalid_carat_ranges" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover invalid carat range arguments." >&2
   exit 1
@@ -233,6 +271,11 @@ fi
 
 if ! grep -Fq "test_collect_diamonds_validates_arguments_before_network" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover direct helper argument validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_parse_args_rejects_blank_output_path" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover blank output path arguments." >&2
   exit 1
 fi
 

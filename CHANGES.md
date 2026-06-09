@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Rejected blank scraper output paths before starting PriceScope download
+  loops and exposed a Python compile `make build` gate.
 - Rejected malformed PriceScope endpoint overrides that lack an HTTPS host,
   include embedded credentials, or include query strings or fragments.
 - Rejected invalid scraper carat ranges and non-positive timeouts before

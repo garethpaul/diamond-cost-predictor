@@ -62,7 +62,8 @@ HTTPS-compatible test endpoints with an explicit host and no embedded
 credentials, query string, or fragment.
 Scraper arguments reject non-positive carat values, ranges where `max_carat` is
 not greater than `min_carat`, and non-positive download timeouts before making
-requests.
+requests. The CLI also rejects blank output paths before any download loop is
+started.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
@@ -76,13 +77,15 @@ make check
 scripts/check-baseline.sh
 ```
 
-`make check` runs the source baseline and focused parser/scraper tests from the
+`make check` runs the source baseline, focused parser/scraper tests, and the
+Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
 HTTPS with a timeout. Parser tests also reject non-finite or non-positive
 numeric model inputs, so generated CSV rows contain finite positive numeric
-values for carat, depth, table, vendor ID, and price.
+values for carat, depth, table, vendor ID, and price. Scraper tests reject
+blank output paths before network work starts.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -101,6 +104,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
+- `psdownload.py` rejects blank output paths before scraping.
 - Review changes touching network requests, downloaded data, model formulas, or
   generated datasets carefully.
 

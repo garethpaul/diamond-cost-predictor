@@ -1,4 +1,4 @@
-.PHONY: lint test verify check
+.PHONY: build lint test verify check
 
 PYTHON ?= python3
 
@@ -9,6 +9,9 @@ test:
 	$(PYTHON) scripts/test-safe-parsing.py
 	$(PYTHON) scripts/test-psdownload.py
 
-verify: lint test
+build:
+	$(PYTHON) -m py_compile csv.py psdownload.py graph.py lm.py scripts/test-safe-parsing.py scripts/test-psdownload.py
+
+verify: lint test build
 
 check: verify
