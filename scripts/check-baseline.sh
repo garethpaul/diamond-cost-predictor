@@ -56,13 +56,20 @@ if ! grep -Fq "__import__('os').system" "$TESTS"; then
   exit 1
 fi
 
-if ! grep -Fq "test_rejects_non_finite_numeric_fields" "$TESTS" || ! grep -Fq "test_rejects_non_positive_price" "$TESTS"; then
+if ! grep -Fq "test_rejects_non_finite_numeric_fields" "$TESTS" || \
+  ! grep -Fq "test_rejects_non_positive_price" "$TESTS" || \
+  ! grep -Fq "test_rejects_non_positive_vendor_id" "$TESTS"; then
   printf '%s\n' "Parser tests must cover invalid numeric model inputs." >&2
   exit 1
 fi
 
 if ! grep -Fq "math.isfinite" "$PARSER" || ! grep -Fq "def positive_int" "$PARSER"; then
   printf '%s\n' "csv.py must validate finite positive numeric model inputs." >&2
+  exit 1
+fi
+
+if ! grep -Fq "'vendor_id': positive_int(record['vendor_id'], 'vendor_id')" "$PARSER"; then
+  printf '%s\n' "csv.py must validate vendor_id as a positive integer." >&2
   exit 1
 fi
 
@@ -78,6 +85,11 @@ fi
 
 if ! grep -Fq "finite positive" "$README"; then
   printf '%s\n' "README must document numeric field validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "vendor ID" "$README"; then
+  printf '%s\n' "README must document positive vendor ID validation." >&2
   exit 1
 fi
 

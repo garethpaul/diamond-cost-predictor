@@ -117,7 +117,7 @@ def parse_diamond_line(line):
     require_fields(record)
     return {
         'shape': shape(record['shape']),
-        'vendor_id': int(record['vendor_id']),
+        'vendor_id': positive_int(record['vendor_id'], 'vendor_id'),
         'carat': numeric_text(record['carat'], 'carat'),
         'color': color(record['color']),
         'clarity': clarity(record['clarity']),

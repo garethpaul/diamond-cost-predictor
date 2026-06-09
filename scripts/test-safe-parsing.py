@@ -77,6 +77,16 @@ class SafeParsingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             diamond_csv.parse_diamond_line(line)
 
+    def test_rejects_non_positive_vendor_id(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': '0', 'carat': '0.28', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': '225'}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
 
 if __name__ == '__main__':
     unittest.main()

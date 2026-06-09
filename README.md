@@ -75,7 +75,7 @@ regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
 HTTPS with a timeout. Parser tests also reject non-finite or non-positive
 numeric model inputs, so generated CSV rows contain finite positive numeric
-values for carat, depth, table, and price.
+values for carat, depth, table, vendor ID, and price.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
