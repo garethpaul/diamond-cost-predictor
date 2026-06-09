@@ -6,6 +6,7 @@ README="$ROOT_DIR/README.md"
 VISION="$ROOT_DIR/VISION.md"
 PLAN="$ROOT_DIR/docs/plans/2026-06-08-safe-diamond-parsing-baseline.md"
 NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-08-numeric-field-validation.md"
+CHECK_PLAN="$ROOT_DIR/docs/plans/2026-06-08-diamond-check-wrapper.md"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -22,6 +23,7 @@ for path in \
   "README.md" \
   "VISION.md" \
   "SECURITY.md" \
+  "Makefile" \
   "csv.py" \
   "psdownload.py" \
   "graph.py" \
@@ -29,6 +31,7 @@ for path in \
   "scripts/check-baseline.sh" \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
+  "docs/plans/2026-06-08-diamond-check-wrapper.md" \
   "docs/plans/2026-06-08-pricescope-https-baseline.md" \
   "docs/plans/2026-06-08-numeric-field-validation.md" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
@@ -78,6 +81,16 @@ if ! grep -Fq "scripts/check-baseline.sh" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "make check" "$README"; then
+  printf '%s\n' "README must document the root make check gate." >&2
+  exit 1
+fi
+
+if ! grep -Fq "check: verify" "$ROOT_DIR/Makefile"; then
+  printf '%s\n' "Makefile must expose make check as the repository verification wrapper." >&2
+  exit 1
+fi
+
 if ! grep -Fq "ast.literal_eval" "$README"; then
   printf '%s\n' "README must document the safe parsing baseline." >&2
   exit 1
@@ -110,6 +123,11 @@ fi
 
 if ! grep -Fq "status: completed" "$NUMERIC_PLAN"; then
   printf '%s\n' "Numeric validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CHECK_PLAN"; then
+  printf '%s\n' "Check wrapper plan must be marked completed." >&2
   exit 1
 fi
 

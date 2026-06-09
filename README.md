@@ -15,13 +15,14 @@ This README is based on the checked-in source, manifests, scripts, and repositor
 - `SECURITY.md` - security reporting and disclosure guidance
 - `VISION.md` - project direction and maintenance guardrails
 - `csv.py` - converts scraped diamond record literals into numeric CSV rows
+- `Makefile` - repository-level verification wrapper
 - `scripts/check-baseline.sh` - source-level safe parsing guard
 
 Additional scan context:
 
 - Source directories: scripts
 - Dependency and build manifests: none detected
-- Entry points or build surfaces: `csv.py`, `scripts/check-baseline.sh`
+- Entry points or build surfaces: `csv.py`, `Makefile`, `scripts/check-baseline.sh`
 - Test-looking files: no obvious test files detected
 
 ## Getting Started
@@ -67,11 +68,13 @@ document the exact Python/R environment used when updating that path.
 Run the safe parsing baseline before committing parser or data-shape changes:
 
 ```bash
+make check
 scripts/check-baseline.sh
 ```
 
-The guard compiles the Python scripts, runs parser and scraper helper
-regression tests, verifies that scraped diamond records are parsed with
+`make check` runs the source baseline and focused parser/scraper tests from the
+repository root. The guard compiles the Python scripts, runs parser and scraper
+helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
 HTTPS with a timeout. Parser tests also reject non-finite or non-positive
 numeric model inputs, so generated CSV rows contain finite positive numeric

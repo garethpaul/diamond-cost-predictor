@@ -2,6 +2,7 @@
 
 ## 2026-06-08
 
+- Added a root `make check` wrapper for the safe parsing and scraper tests.
 - Validated scraped vendor IDs as positive integers before writing model rows.
 - Replaced `eval`-based diamond record parsing with `ast.literal_eval` and field validation.
 - Added focused parser regression tests for valid records, malicious non-literal input, missing fields, and unknown codes.
