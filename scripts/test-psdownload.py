@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import contextlib
 import importlib.util
+import io
 import pathlib
 import tempfile
 import unittest
@@ -22,6 +24,11 @@ psdownload = load_scraper_module()
 
 
 class PriceScopeDownloadTests(unittest.TestCase):
+    def assertParseArgsExits(self, args):
+        with contextlib.redirect_stderr(io.StringIO()):
+            with self.assertRaises(SystemExit):
+                psdownload.parse_args(args)
+
     def test_build_url_encodes_query_arguments(self):
         url = psdownload.build_url('BR', 0.25, 0.255, 3)
         parsed = urlparse(url)
@@ -53,14 +60,11 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertEqual(args.timeout, psdownload.DEFAULT_TIMEOUT)
 
     def test_parse_args_rejects_invalid_carat_ranges(self):
-        with self.assertRaises(SystemExit):
-            psdownload.parse_args(['0', '0.30'])
-        with self.assertRaises(SystemExit):
-            psdownload.parse_args(['0.30', '0.25'])
+        self.assertParseArgsExits(['0', '0.30'])
+        self.assertParseArgsExits(['0.30', '0.25'])
 
     def test_parse_args_rejects_non_positive_timeout(self):
-        with self.assertRaises(SystemExit):
-            psdownload.parse_args(['0.25', '0.30', '--timeout', '0'])
+        self.assertParseArgsExits(['0.25', '0.30', '--timeout', '0'])
 
     def test_collect_diamonds_validates_arguments_before_network(self):
         with self.assertRaises(ValueError):
