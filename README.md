@@ -58,7 +58,8 @@ python3 psdownload.py 0.25 0.30 --output diamonds.txt --timeout 15
 
 The downloader defaults to `https://www.pricescope.com/results/ajax/` and rejects
 non-HTTPS endpoint overrides. Use `--endpoint` or `PRICESCOPE_AJAX_URL` only for
-HTTPS-compatible test endpoints.
+HTTPS-compatible test endpoints with an explicit host and no embedded
+credentials, query string, or fragment.
 Scraper arguments reject non-positive carat values, ranges where `max_carat` is
 not greater than `min_carat`, and non-positive download timeouts before making
 requests.
@@ -96,7 +97,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Numeric parser validation rejects non-finite or non-positive model inputs
   before they are written to generated CSV rows.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
-  handles page-level timeout or URL errors.
+  rejects endpoint overrides without a host, with embedded credentials, or with
+  query strings or fragments.
+- `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - Review changes touching network requests, downloaded data, model formulas, or
   generated datasets carefully.

@@ -36,7 +36,8 @@ for path in \
   "docs/plans/2026-06-08-numeric-field-validation.md" \
   "docs/plans/2026-06-08-scraper-timeout-python3-baseline.md" \
   "docs/plans/2026-06-08-safe-diamond-parsing-baseline.md" \
-  "docs/plans/2026-06-09-scraper-argument-validation.md"; do
+  "docs/plans/2026-06-09-scraper-argument-validation.md" \
+  "docs/plans/2026-06-09-scraper-endpoint-validation.md"; do
   require_file "$path"
 done
 
@@ -112,8 +113,20 @@ if ! grep -Fq "https://www.pricescope.com/results/ajax/" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "explicit host" "$README" ||
+  ! grep -Fq "embedded" "$README" ||
+  ! grep -Fq "query strings or fragments" "$README"; then
+  printf '%s\n' "README must document endpoint override credential and query restrictions." >&2
+  exit 1
+fi
+
 if ! grep -Fq "avoid executing untrusted input as code" "$VISION"; then
   printf '%s\n' "VISION.md must keep the parser safety direction visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Validate scraper endpoint overrides" "$VISION"; then
+  printf '%s\n' "VISION.md must keep scraper endpoint validation visible." >&2
   exit 1
 fi
 
@@ -142,6 +155,16 @@ if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-scraper-argument-val
   exit 1
 fi
 
+if ! grep -Fq "status: completed" "$ROOT_DIR/docs/plans/2026-06-09-scraper-endpoint-validation.md"; then
+  printf '%s\n' "Scraper endpoint validation plan must be marked completed." >&2
+  exit 1
+fi
+
+if ! grep -Fq "make check" "$ROOT_DIR/docs/plans/2026-06-09-scraper-endpoint-validation.md"; then
+  printf '%s\n' "Scraper endpoint validation plan must record make check verification." >&2
+  exit 1
+fi
+
 if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
   exit 1
@@ -157,8 +180,19 @@ if grep -Fq "http://www.pricescope.com/results/ajax/" "$ROOT_DIR/psdownload.py";
   exit 1
 fi
 
-if ! grep -Fq 'endpoint.lower().startswith("https://")' "$ROOT_DIR/psdownload.py"; then
-  printf '%s\n' "psdownload.py must reject non-HTTPS endpoint overrides." >&2
+if ! grep -Fq "urlparse(endpoint)" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq 'parsed.scheme.lower() != "https" or not parsed.netloc' "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject endpoint overrides without HTTPS and a host." >&2
+  exit 1
+fi
+
+if ! grep -Fq "parsed.username or parsed.password" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject endpoint overrides with embedded credentials." >&2
+  exit 1
+fi
+
+if ! grep -Fq "parsed.query or parsed.fragment" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject endpoint overrides with query strings or fragments." >&2
   exit 1
 fi
 
@@ -199,6 +233,16 @@ fi
 
 if ! grep -Fq "test_collect_diamonds_validates_arguments_before_network" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover direct helper argument validation." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_pricescope_endpoint_rejects_embedded_credentials" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover credential-bearing endpoint overrides." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_pricescope_endpoint_rejects_query_strings_and_fragments" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover query-string and fragment endpoint overrides." >&2
   exit 1
 fi
 

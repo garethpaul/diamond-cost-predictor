@@ -47,6 +47,26 @@ class PriceScopeDownloadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             psdownload.pricescope_ajax_url('http://www.pricescope.com/results/ajax/')
 
+        with self.assertRaises(ValueError):
+            psdownload.pricescope_ajax_url('https://')
+
+    def test_pricescope_endpoint_rejects_embedded_credentials(self):
+        with self.assertRaises(ValueError):
+            psdownload.pricescope_ajax_url('https://user:secret@example.test/results/ajax/')
+
+    def test_pricescope_endpoint_rejects_query_strings_and_fragments(self):
+        with self.assertRaises(ValueError):
+            psdownload.pricescope_ajax_url('https://example.test/results/ajax/?debug=true')
+
+        with self.assertRaises(ValueError):
+            psdownload.pricescope_ajax_url('https://example.test/results/ajax/#fragment')
+
+    def test_pricescope_endpoint_allows_trailing_question_mark_for_legacy_overrides(self):
+        self.assertEqual(
+            psdownload.pricescope_ajax_url(' https://example.test/results/ajax/? '),
+            'https://example.test/results/ajax/',
+        )
+
     def test_parse_total_falls_back_on_unexpected_markup(self):
         self.assertEqual(psdownload.parse_total('We have 42 <b>diamonds</b>', 500), 42)
         self.assertEqual(psdownload.parse_total('No count here', 17), 17)

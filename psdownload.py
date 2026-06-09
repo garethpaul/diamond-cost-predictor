@@ -3,7 +3,7 @@ import argparse
 import os
 import socket
 from urllib.error import URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
 
 
@@ -21,9 +21,14 @@ def drange(start, stop, step):
 
 
 def pricescope_ajax_url(endpoint=None):
-    endpoint = endpoint or os.environ.get("PRICESCOPE_AJAX_URL", DEFAULT_PRICESCOPE_AJAX_URL)
-    if not endpoint.lower().startswith("https://"):
-        raise ValueError("PriceScope endpoint must use HTTPS")
+    endpoint = (endpoint or os.environ.get("PRICESCOPE_AJAX_URL", DEFAULT_PRICESCOPE_AJAX_URL)).strip()
+    parsed = urlparse(endpoint)
+    if parsed.scheme.lower() != "https" or not parsed.netloc:
+        raise ValueError("PriceScope endpoint must use HTTPS with a host")
+    if parsed.username or parsed.password:
+        raise ValueError("PriceScope endpoint must not include credentials")
+    if parsed.query or parsed.fragment:
+        raise ValueError("PriceScope endpoint must not include query strings or fragments")
     return endpoint.rstrip("?")
 
 

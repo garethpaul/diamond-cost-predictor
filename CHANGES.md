@@ -2,6 +2,8 @@
 
 ## 2026-06-09
 
+- Rejected malformed PriceScope endpoint overrides that lack an HTTPS host,
+  include embedded credentials, or include query strings or fragments.
 - Rejected invalid scraper carat ranges and non-positive timeouts before
   starting PriceScope download loops.
 
