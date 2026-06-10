@@ -82,14 +82,16 @@ Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout. Parser tests also reject boolean literals and non-finite
+HTTPS with a timeout. Each downloaded page is capped at 2 MiB before decoding
+to prevent an oversized remote response from exhausting process memory. Parser
+tests also reject boolean literals and non-finite
 or non-positive numeric model inputs, so generated CSV rows contain finite positive
 numeric values for carat, depth, table, vendor ID, and price. Scraper
 tests reject blank output paths before network work starts, and the write
 helper also validates output paths before opening files.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 for pushes,
-pull requests, and manual dispatches. The workflow uses commit-pinned actions,
-read-only repository access, and a bounded runtime.
+pull requests, and manual dispatches on Ubuntu 24.04. The workflow uses
+commit-pinned actions, read-only repository access, and a bounded runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -107,6 +109,7 @@ When the required SDK or runtime is unavailable, use static checks and source re
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
+- `psdownload.py` rejects page responses larger than 2 MiB before decoding.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
@@ -123,6 +126,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   downloader hardening follow-up.
 - See `docs/plans/2026-06-09-output-helper-validation.md` for helper-level
   output path validation.
+- See `docs/plans/2026-06-10-scraper-response-limit.md` for the per-page
+  download memory boundary.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the hosted GitHub Actions
   baseline.
 - `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by

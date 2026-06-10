@@ -2,6 +2,9 @@
 
 ## 2026-06-10
 
+- Limited each downloaded PriceScope page to 2 MiB before decoding and added
+  offline regression tests for bounded and oversized responses.
+- Rooted Make verification to the repository and pinned CI to Ubuntu 24.04.
 - Added a GitHub Actions workflow that runs `make check` on Python 3.10, 3.12,
   and 3.14.
 - Pinned workflow actions and limited repository access to read-only with

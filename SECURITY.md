@@ -37,7 +37,9 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 
 For this scraper sample, keep endpoint overrides constrained to HTTPS hosts
 without embedded credentials, query strings, or fragments. Output paths should
-be validated before downloads and direct result writes.
+be validated before downloads and direct result writes. Remote page bodies
+must remain size-limited before decoding so an oversized response cannot consume
+unbounded process memory.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
 commit-pinned actions, read-only repository access, and bounded execution so
 parser, scraper argument, endpoint, and output-path guardrails stay enforced

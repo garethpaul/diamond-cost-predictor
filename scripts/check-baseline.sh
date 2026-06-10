@@ -12,7 +12,9 @@ OUTPUT_HELPER_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-helper-validation.md"
 FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument-validation.md"
 BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-validation.md"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
+MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -49,6 +51,7 @@ for path in \
   "docs/plans/2026-06-09-output-helper-validation.md" \
   "docs/plans/2026-06-09-boolean-numeric-field-validation.md" \
   "docs/plans/2026-06-10-ci-baseline.md" \
+  "docs/plans/2026-06-10-scraper-response-limit.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -68,6 +71,17 @@ fi
 
 if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" || ! grep -Fq "timeout-minutes: 5" "$CI_WORKFLOW"; then
   printf '%s\n' "GitHub Actions workflow must support bounded manual verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions must use the stable Ubuntu 24.04 runner." >&2
+  exit 1
+fi
+
+if ! grep -Fq 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' "$MAKEFILE" ||
+  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 9 ]; then
+  printf '%s\n' "Make verification must resolve scripts and Python files from the repository root." >&2
   exit 1
 fi
 
@@ -298,6 +312,12 @@ if ! grep -Fq "status: completed" "$CI_PLAN" ||
   exit 1
 fi
 
+if ! grep -Fq "status: completed" "$RESPONSE_LIMIT_PLAN" ||
+  ! grep -Fq "make check" "$RESPONSE_LIMIT_PLAN"; then
+  printf '%s\n' "Scraper response limit plan must be completed and record verification." >&2
+  exit 1
+fi
+
 if ! grep -Fq "urlopen(url, timeout=timeout)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must set a timeout on network downloads." >&2
   exit 1
@@ -331,6 +351,13 @@ fi
 
 if ! grep -Fq "except (TimeoutError, socket.timeout, URLError)" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must handle timeout and URL failures at page scope." >&2
+  exit 1
+fi
+
+if ! grep -Fq "MAX_RESPONSE_BYTES = 2 * 1024 * 1024" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "response.read(MAX_RESPONSE_BYTES + 1)" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "len(payload) > MAX_RESPONSE_BYTES" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must bound each remote page response before decoding." >&2
   exit 1
 fi
 
@@ -419,6 +446,12 @@ fi
 
 if ! grep -Fq "test_pricescope_endpoint_rejects_query_strings_and_fragments" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover query-string and fragment endpoint overrides." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_read_lines_accepts_bounded_utf8_response" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_read_lines_rejects_oversized_response" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover bounded and oversized page responses." >&2
   exit 1
 fi
 

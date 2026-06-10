@@ -126,6 +126,51 @@ class PriceScopeDownloadTests(unittest.TestCase):
         finally:
             psdownload.urlopen = original_urlopen
 
+    def test_read_lines_accepts_bounded_utf8_response(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self, limit):
+                self.limit = limit
+                return b'first\nsecond\n'
+
+        response = FakeResponse()
+        psdownload.urlopen = lambda url, timeout: response
+        try:
+            self.assertEqual(
+                psdownload.read_lines('https://example.test/', 1),
+                ['first', 'second'],
+            )
+            self.assertEqual(response.limit, psdownload.MAX_RESPONSE_BYTES + 1)
+        finally:
+            psdownload.urlopen = original_urlopen
+
+    def test_read_lines_rejects_oversized_response(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self, limit):
+                return b'x' * limit
+
+        psdownload.urlopen = lambda url, timeout: FakeResponse()
+        try:
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+        finally:
+            psdownload.urlopen = original_urlopen
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -12,6 +12,7 @@ DIAMOND_TYPES = ["BR", "PR", "EM", "OV", "MQ", "PS", "AS", "CU", "RA", "HS"]
 DEFAULT_PRICESCOPE_AJAX_URL = "https://www.pricescope.com/results/ajax/"
 DEFAULT_STEP = 0.005
 DEFAULT_TIMEOUT = 15
+MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
 
 def drange(start, stop, step):
@@ -81,7 +82,11 @@ def build_url(shape, lower_size, upper_size, page, endpoint=None):
 def read_lines(url, timeout):
     try:
         with urlopen(url, timeout=timeout) as response:
-            return response.read().decode("utf-8", "replace").splitlines()
+            payload = response.read(MAX_RESPONSE_BYTES + 1)
+            if len(payload) > MAX_RESPONSE_BYTES:
+                print("   Failed to download page: response exceeded byte limit")
+                return []
+            return payload.decode("utf-8", "replace").splitlines()
     except (TimeoutError, socket.timeout, URLError) as exc:
         print("   Failed to download page: {0}".format(exc))
         return []
