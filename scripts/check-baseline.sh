@@ -11,6 +11,8 @@ OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-path-validation.md"
 OUTPUT_HELPER_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-helper-validation.md"
 FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument-validation.md"
 BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-validation.md"
+CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
@@ -27,6 +29,7 @@ for path in \
   "README.md" \
   "VISION.md" \
   "SECURITY.md" \
+  ".github/workflows/check.yml" \
   "Makefile" \
   "csv.py" \
   "psdownload.py" \
@@ -45,9 +48,28 @@ for path in \
   "docs/plans/2026-06-09-scraper-finite-argument-validation.md" \
   "docs/plans/2026-06-09-output-helper-validation.md" \
   "docs/plans/2026-06-09-boolean-numeric-field-validation.md" \
+  "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
+
+if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_WORKFLOW" ||
+  ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
+  ! grep -Fq 'python-version: ["3.10", "3.12", "3.14"]' "$CI_WORKFLOW" ||
+  ! grep -Fq "run: make check" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions workflow must pin actions and run make check across supported Python releases." >&2
+  exit 1
+fi
+
+if ! grep -Fq "permissions:" "$CI_WORKFLOW" || ! grep -Fq "contents: read" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions workflow must keep repository access read-only." >&2
+  exit 1
+fi
+
+if ! grep -Fq "workflow_dispatch:" "$CI_WORKFLOW" || ! grep -Fq "timeout-minutes: 5" "$CI_WORKFLOW"; then
+  printf '%s\n' "GitHub Actions workflow must support bounded manual verification." >&2
+  exit 1
+fi
 
 if grep -Eq '(^|[^._[:alnum:]])eval[[:space:]]*\(' "$PARSER"; then
   printf '%s\n' "csv.py must not execute scraped diamond records with eval()." >&2
@@ -100,6 +122,15 @@ fi
 
 if ! grep -Fq "make check" "$README"; then
   printf '%s\n' "README must document the root make check gate." >&2
+  exit 1
+fi
+
+if ! grep -Fq "GitHub Actions" "$README" ||
+  ! grep -Fq "docs/plans/2026-06-10-ci-baseline.md" "$README" ||
+  ! grep -Fq "GitHub Actions" "$VISION" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "GitHub Actions" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Project docs must record the GitHub Actions CI baseline." >&2
   exit 1
 fi
 
@@ -258,6 +289,12 @@ fi
 
 if ! grep -Fq "make check" "$BOOLEAN_NUMERIC_PLAN"; then
   printf '%s\n' "Boolean numeric field validation plan must record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$CI_PLAN" ||
+  ! grep -Fq "make check" "$CI_PLAN"; then
+  printf '%s\n' "CI baseline plan must be completed and record make check verification." >&2
   exit 1
 fi
 

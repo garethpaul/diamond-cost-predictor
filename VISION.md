@@ -25,6 +25,7 @@ Priority:
 - Validate scraper endpoint overrides before downloading data
 - Validate scraper output paths before downloading data and direct file writes
 - Reject boolean literals in numeric diamond fields before model generation
+- Keep GitHub Actions aligned with the local Python `make check` baseline
 - Keep the model formula and graph generation easy to inspect
 
 Next priorities:
@@ -40,6 +41,8 @@ Contribution rules:
 - Document any dataset replacement or regenerated output.
 - Keep generated reports separate from source changes.
 - Verify model scripts with the declared Python/R environment before pushing.
+- Keep `.github/workflows/check.yml` in sync with the local parser and scraper
+  guard.
 
 ## Security And Data
 

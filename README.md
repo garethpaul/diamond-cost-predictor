@@ -87,6 +87,9 @@ or non-positive numeric model inputs, so generated CSV rows contain finite posit
 numeric values for carat, depth, table, vendor ID, and price. Scraper
 tests reject blank output paths before network work starts, and the write
 helper also validates output paths before opening files.
+GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 for pushes,
+pull requests, and manual dispatches. The workflow uses commit-pinned actions,
+read-only repository access, and a bounded runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
@@ -120,6 +123,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   downloader hardening follow-up.
 - See `docs/plans/2026-06-09-output-helper-validation.md` for helper-level
   output path validation.
+- See `docs/plans/2026-06-10-ci-baseline.md` for the hosted GitHub Actions
+  baseline.
 - `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by
   default.
 

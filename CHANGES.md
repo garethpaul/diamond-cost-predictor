@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-10
+
+- Added a GitHub Actions workflow that runs `make check` on Python 3.10, 3.12,
+  and 3.14.
+- Pinned workflow actions and limited repository access to read-only with
+  bounded execution.
+- Extended the baseline guard and docs to require the hosted CI verification
+  path.
+
 ## 2026-06-09
 
 - Rejected boolean literals for parsed numeric diamond model fields.
