@@ -62,8 +62,9 @@ HTTPS-compatible test endpoints with an explicit host and no embedded
 credentials, query string, or fragment.
 Scraper arguments reject non-finite or non-positive carat values and timeouts,
 plus ranges where `max_carat` is not greater than `min_carat`, before making
-requests. The CLI also rejects blank output paths before any download loop is
-started.
+requests. Each invocation is limited to a `0.5` carat span, and range iteration
+fails if floating-point addition cannot advance the next bucket. The CLI also
+rejects blank output paths before any download loop is started.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
@@ -113,6 +114,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` rejects page responses larger than 2 MiB before decoding.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
+- `psdownload.py` bounds each invocation to a `0.5` carat span and rejects
+  non-advancing floating-point range steps.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
 - The write helper also validates output paths before opening files.
@@ -130,6 +133,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   output path validation.
 - See `docs/plans/2026-06-10-scraper-response-limit.md` for the per-page
   download memory boundary.
+- See `docs/plans/2026-06-12-scraper-range-work-limit.md` for the bounded
+  request-range contract.
 - See `docs/plans/2026-06-10-ci-baseline.md` for the hosted GitHub Actions
   baseline.
 - `diamonds.txt` and `prediction.pdf` are generated artifacts and are ignored by

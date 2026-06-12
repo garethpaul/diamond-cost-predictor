@@ -21,6 +21,8 @@ Priority:
 - Keep Python 2 and rpy2/R assumptions visible
 - Avoid hiding generated outputs or scraped-data provenance
 - Validate scraper ranges before downloading data
+- Bound each scraper invocation to a narrow carat span and reject range steps
+  that cannot advance
 - Validate scraper numeric arguments as finite values before downloading data
 - Validate scraper endpoint overrides before downloading data
 - Validate scraper output paths before downloading data and direct file writes
