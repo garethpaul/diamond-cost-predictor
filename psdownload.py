@@ -12,14 +12,21 @@ DIAMOND_TYPES = ["BR", "PR", "EM", "OV", "MQ", "PS", "AS", "CU", "RA", "HS"]
 DEFAULT_PRICESCOPE_AJAX_URL = "https://www.pricescope.com/results/ajax/"
 DEFAULT_STEP = 0.005
 DEFAULT_TIMEOUT = 15
+MAX_CARAT_SPAN = 0.5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
 
 
 def drange(start, stop, step):
+    if not all(math.isfinite(value) for value in (start, stop, step)) or step <= 0:
+        raise ValueError("range step and bounds must be finite with a positive step")
+
     current = start
     while current < stop:
+        next_value = current + step
+        if next_value <= current:
+            raise ValueError("range step does not advance the current value")
         yield current
-        current += step
+        current = next_value
 
 
 def pricescope_ajax_url(endpoint=None):
@@ -106,6 +113,8 @@ def validate_scrape_args(min_carat, max_carat, timeout):
         raise ValueError("max_carat must be positive")
     if max_carat <= min_carat:
         raise ValueError("max_carat must be greater than min_carat")
+    if max_carat - min_carat > MAX_CARAT_SPAN:
+        raise ValueError("carat range must not exceed {0}".format(MAX_CARAT_SPAN))
     if not math.isfinite(timeout) or timeout <= 0:
         raise ValueError("timeout must be positive")
 

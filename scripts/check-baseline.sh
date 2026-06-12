@@ -14,6 +14,7 @@ BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-vali
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
 EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md"
+RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -54,6 +55,7 @@ for path in \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-10-scraper-response-limit.md" \
   "docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md" \
+  "docs/plans/2026-06-12-scraper-range-work-limit.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -252,6 +254,17 @@ if ! grep -Fq "Require vendor IDs and prices to be exact positive integers" "$VI
   exit 1
 fi
 
+if ! grep -Fq "Bound each scraper invocation to a narrow carat span" "$VISION"; then
+  printf '%s\n' "VISION.md must keep bounded scraper work visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$RANGE_WORK_LIMIT_PLAN" ||
+  ! grep -Fq "make check" "$RANGE_WORK_LIMIT_PLAN"; then
+  printf '%s\n' "Scraper range work-limit plan must remain completed and verified." >&2
+  exit 1
+fi
+
 if ! grep -Fq "Exact Integer Field Validation" "$EXACT_INTEGER_PLAN" ||
   ! grep -Fq "scripts/test-safe-parsing.py" "$EXACT_INTEGER_PLAN"; then
   printf '%s\n' "Exact integer field plan must document parser regression coverage." >&2
@@ -403,6 +416,13 @@ if ! grep -Fq "max_carat must be greater than min_carat" "$ROOT_DIR/psdownload.p
   exit 1
 fi
 
+if ! grep -Fq "MAX_CARAT_SPAN = 0.5" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "max_carat - min_carat > MAX_CARAT_SPAN" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "next_value <= current" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper ranges must keep bounded spans and advancing steps." >&2
+  exit 1
+fi
+
 if ! grep -Fq "math.isfinite(min_carat)" "$ROOT_DIR/psdownload.py" ||
   ! grep -Fq "math.isfinite(max_carat)" "$ROOT_DIR/psdownload.py" ||
   ! grep -Fq "math.isfinite(timeout)" "$ROOT_DIR/psdownload.py"; then
@@ -433,6 +453,12 @@ fi
 
 if ! grep -Fq "test_parse_args_rejects_invalid_carat_ranges" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover invalid carat range arguments." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_parse_args_rejects_excessive_carat_span" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_drange_rejects_invalid_or_non_advancing_steps" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover bounded spans and non-advancing steps." >&2
   exit 1
 fi
 

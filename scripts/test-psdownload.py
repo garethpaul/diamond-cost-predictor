@@ -83,6 +83,12 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertParseArgsExits(['0', '0.30'])
         self.assertParseArgsExits(['0.30', '0.25'])
 
+    def test_parse_args_rejects_excessive_carat_span(self):
+        self.assertParseArgsExits(['0.25', '0.751'])
+
+        args = psdownload.parse_args(['0.25', '0.75'])
+        self.assertEqual(args.max_carat - args.min_carat, psdownload.MAX_CARAT_SPAN)
+
     def test_parse_args_rejects_non_finite_carat_ranges(self):
         self.assertParseArgsExits(['nan', '0.30'])
         self.assertParseArgsExits(['0.25', 'inf'])
@@ -98,10 +104,25 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertParseArgsExits(['0.25', '0.30', '--output', '   '])
 
     def test_collect_diamonds_validates_arguments_before_network(self):
+        original_read_lines = psdownload.read_lines
+        psdownload.read_lines = lambda url, timeout: self.fail('network reached')
+        try:
+            with self.assertRaises(ValueError):
+                psdownload.collect_diamonds(0.25, 0.30, 0)
+            with self.assertRaises(ValueError):
+                psdownload.collect_diamonds(float('nan'), 0.30, 1)
+            with self.assertRaises(ValueError):
+                psdownload.collect_diamonds(0.25, 0.751, 1)
+        finally:
+            psdownload.read_lines = original_read_lines
+
+    def test_drange_rejects_invalid_or_non_advancing_steps(self):
         with self.assertRaises(ValueError):
-            psdownload.collect_diamonds(0.25, 0.30, 0)
+            list(psdownload.drange(0.25, 0.30, 0))
         with self.assertRaises(ValueError):
-            psdownload.collect_diamonds(float('nan'), 0.30, 1)
+            list(psdownload.drange(0.25, 0.30, float('inf')))
+        with self.assertRaises(ValueError):
+            list(psdownload.drange(1e20, 1e20 + 1e6, psdownload.DEFAULT_STEP))
 
     def test_write_diamonds_writes_one_record_per_line(self):
         with tempfile.TemporaryDirectory() as directory:

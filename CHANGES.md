@@ -6,6 +6,9 @@
   fields instead of truncating them or leaking conversion errors.
 - Added regression coverage for both integer fields and retained support for
   exact integral float values.
+- Limited each scraper invocation to a `0.5` carat span before network work.
+- Rejected invalid or non-advancing floating-point range steps and added
+  no-network regression coverage for both work limits.
 
 ## 2026-06-10
 
