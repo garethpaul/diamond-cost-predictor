@@ -13,6 +13,7 @@ FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument
 BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-validation.md"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
 RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
+EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -52,6 +53,7 @@ for path in \
   "docs/plans/2026-06-09-boolean-numeric-field-validation.md" \
   "docs/plans/2026-06-10-ci-baseline.md" \
   "docs/plans/2026-06-10-scraper-response-limit.md" \
+  "docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -108,6 +110,9 @@ fi
 if ! grep -Fq "test_rejects_non_finite_numeric_fields" "$TESTS" || \
   ! grep -Fq "test_rejects_boolean_numeric_fields" "$TESTS" || \
   ! grep -Fq "test_rejects_boolean_integer_fields" "$TESTS" || \
+  ! grep -Fq "test_rejects_fractional_integer_fields" "$TESTS" || \
+  ! grep -Fq "test_rejects_non_finite_integer_fields_as_value_errors" "$TESTS" || \
+  ! grep -Fq "test_accepts_integral_float_integer_fields" "$TESTS" || \
   ! grep -Fq "test_rejects_non_positive_price" "$TESTS" || \
   ! grep -Fq "test_rejects_non_positive_vendor_id" "$TESTS"; then
   printf '%s\n' "Parser tests must cover invalid numeric model inputs." >&2
@@ -116,6 +121,12 @@ fi
 
 if ! grep -Fq "math.isfinite" "$PARSER" || ! grep -Fq "def positive_int" "$PARSER"; then
   printf '%s\n' "csv.py must validate finite positive numeric model inputs." >&2
+  exit 1
+fi
+
+if ! grep -Fq "value.is_integer()" "$PARSER" ||
+  ! grep -Fq "except (TypeError, ValueError, OverflowError)" "$PARSER"; then
+  printf '%s\n' "csv.py must reject fractional or non-finite float values in integer fields." >&2
   exit 1
 fi
 
@@ -174,6 +185,11 @@ if ! grep -Fq "boolean literals" "$README"; then
   exit 1
 fi
 
+if ! grep -Fq "exact positive integers" "$README"; then
+  printf '%s\n' "README must document exact integer field validation." >&2
+  exit 1
+fi
+
 if ! grep -Fq "vendor ID" "$README"; then
   printf '%s\n' "README must document positive vendor ID validation." >&2
   exit 1
@@ -228,6 +244,17 @@ fi
 
 if ! grep -Fq "Reject boolean literals in numeric diamond fields" "$VISION"; then
   printf '%s\n' "VISION.md must keep boolean numeric field validation visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Require vendor IDs and prices to be exact positive integers" "$VISION"; then
+  printf '%s\n' "VISION.md must keep exact integer field validation visible." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Exact Integer Field Validation" "$EXACT_INTEGER_PLAN" ||
+  ! grep -Fq "scripts/test-safe-parsing.py" "$EXACT_INTEGER_PLAN"; then
+  printf '%s\n' "Exact integer field plan must document parser regression coverage." >&2
   exit 1
 fi
 

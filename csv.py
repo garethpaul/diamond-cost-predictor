@@ -144,9 +144,11 @@ def numeric_text(value, field_name):
 def positive_int(value, field_name):
     if isinstance(value, bool):
         raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
+    if isinstance(value, float) and (not math.isfinite(value) or not value.is_integer()):
+        raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
     try:
         number = int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
         raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))
     if number <= 0:
         raise ValueError('Unsupported {0}: {1!r}'.format(field_name, value))

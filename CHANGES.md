@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-12
+
+- Rejected fractional and non-finite float literals in vendor ID and price
+  fields instead of truncating them or leaking conversion errors.
+- Added regression coverage for both integer fields and retained support for
+  exact integral float values.
+
 ## 2026-06-10
 
 - Limited each downloaded PriceScope page to 2 MiB before decoding and added

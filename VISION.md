@@ -26,6 +26,7 @@ Priority:
 - Validate scraper output paths before downloading data and direct file writes
 - Bound each remote scraper page before decoding it into memory
 - Reject boolean literals in numeric diamond fields before model generation
+- Require vendor IDs and prices to be exact positive integers
 - Keep GitHub Actions aligned with the local Python `make check` baseline
 - Keep the model formula and graph generation easy to inspect
 

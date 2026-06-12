@@ -87,6 +87,49 @@ class SafeParsingTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             diamond_csv.parse_diamond_line(line)
 
+    def test_rejects_fractional_integer_fields(self):
+        record = {
+            'shape': 'PR',
+            'vendor_id': 42,
+            'carat': '0.28',
+            'color': 'G',
+            'clarity': 'SI2',
+            'depth': '71.9',
+            'table': '74',
+            'sym': 'VG',
+            'pol': 'ID',
+            'price': 225,
+        }
+
+        for field_name in ('vendor_id', 'price'):
+            with self.subTest(field_name=field_name):
+                invalid_record = dict(record)
+                invalid_record[field_name] = 42.5
+                with self.assertRaises(ValueError):
+                    diamond_csv.parse_diamond_line(repr(invalid_record))
+
+    def test_rejects_non_finite_integer_fields_as_value_errors(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': '42', 'carat': '0.28', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': 1e309}"
+        )
+
+        with self.assertRaises(ValueError):
+            diamond_csv.parse_diamond_line(line)
+
+    def test_accepts_integral_float_integer_fields(self):
+        line = (
+            "{'shape': 'PR', 'vendor_id': 42.0, 'carat': '0.28', "
+            "'color': 'G', 'clarity': 'SI2', 'depth': '71.9', "
+            "'table': '74', 'sym': 'VG', 'pol': 'ID', 'price': 225.0}"
+        )
+
+        record = diamond_csv.parse_diamond_line(line)
+
+        self.assertEqual(record['vendor_id'], 42)
+        self.assertEqual(record['price'], 225)
+
     def test_rejects_non_positive_price(self):
         line = (
             "{'shape': 'PR', 'vendor_id': '42', 'carat': '0.28', "

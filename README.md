@@ -84,9 +84,10 @@ helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
 HTTPS with a timeout. Each downloaded page is capped at 2 MiB before decoding
 to prevent an oversized remote response from exhausting process memory. Parser
-tests also reject boolean literals and non-finite
-or non-positive numeric model inputs, so generated CSV rows contain finite positive
-numeric values for carat, depth, table, vendor ID, and price. Scraper
+tests also reject boolean literals and non-finite or non-positive numeric model
+inputs, so generated CSV rows contain finite positive values. Vendor IDs and
+prices must be exact positive integers, so fractional float literals cannot be
+silently truncated. Scraper
 tests reject blank output paths before network work starts, and the write
 helper also validates output paths before opening files.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 for pushes,
@@ -103,8 +104,9 @@ When the required SDK or runtime is unavailable, use static checks and source re
 
 - `csv.py` parses downloaded records with `ast.literal_eval` and rejects unsafe
   non-literal input.
-- Numeric parser validation rejects non-finite or non-positive model inputs
-  and boolean literals before they are written to generated CSV rows.
+- Numeric parser validation rejects non-finite or non-positive model inputs,
+  boolean literals, and fractional vendor IDs or prices before they are written
+  to generated CSV rows.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.
