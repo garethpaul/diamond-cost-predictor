@@ -93,7 +93,8 @@ tests reject blank output paths before network work starts, and the write
 helper also validates output paths before opening files.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 for pushes,
 pull requests, and manual dispatches on Ubuntu 24.04. The workflow uses
-commit-pinned actions, read-only repository access, and a bounded runtime.
+commit-pinned actions, read-only repository access, a credential-free
+checkout, and a bounded runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 

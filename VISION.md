@@ -30,6 +30,7 @@ Priority:
 - Reject boolean literals in numeric diamond fields before model generation
 - Require vendor IDs and prices to be exact positive integers
 - Keep GitHub Actions aligned with the local Python `make check` baseline
+  without persisting the checkout credential
 - Keep the model formula and graph generation easy to inspect
 
 Next priorities:

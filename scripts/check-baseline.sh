@@ -12,6 +12,7 @@ OUTPUT_HELPER_PLAN="$ROOT_DIR/docs/plans/2026-06-09-output-helper-validation.md"
 FINITE_SCRAPER_ARG_PLAN="$ROOT_DIR/docs/plans/2026-06-09-scraper-finite-argument-validation.md"
 BOOLEAN_NUMERIC_PLAN="$ROOT_DIR/docs/plans/2026-06-09-boolean-numeric-field-validation.md"
 CI_PLAN="$ROOT_DIR/docs/plans/2026-06-10-ci-baseline.md"
+CHECKOUT_CREDENTIAL_PLAN="$ROOT_DIR/docs/plans/2026-06-12-checkout-credential-boundary.md"
 RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
 EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md"
 RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.md"
@@ -53,12 +54,21 @@ for path in \
   "docs/plans/2026-06-09-output-helper-validation.md" \
   "docs/plans/2026-06-09-boolean-numeric-field-validation.md" \
   "docs/plans/2026-06-10-ci-baseline.md" \
+  "docs/plans/2026-06-12-checkout-credential-boundary.md" \
   "docs/plans/2026-06-10-scraper-response-limit.md" \
   "docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md" \
   "docs/plans/2026-06-12-scraper-range-work-limit.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
+
+workflow_count=$(find "$ROOT_DIR/.github/workflows" -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l | tr -d ' ')
+checkout_count=$(grep -Ec '^[[:space:]]*-[[:space:]]*uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10' "$CI_WORKFLOW" || true)
+credential_boundary_count=$(grep -Ec '^[[:space:]]*persist-credentials:[[:space:]]*false([[:space:]]|$)' "$CI_WORKFLOW" || true)
+if [ "$workflow_count" -ne 1 ] || [ "$checkout_count" -ne 1 ] || [ "$credential_boundary_count" -ne 1 ]; then
+  printf '%s\n' "GitHub Actions must keep one workflow with one pinned, credential-free checkout." >&2
+  exit 1
+fi
 
 if ! grep -Fq "actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10" "$CI_WORKFLOW" ||
   ! grep -Fq "actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405" "$CI_WORKFLOW" ||
@@ -349,6 +359,12 @@ fi
 if ! grep -Fq "status: completed" "$CI_PLAN" ||
   ! grep -Fq "make check" "$CI_PLAN"; then
   printf '%s\n' "CI baseline plan must be completed and record make check verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Status: Completed" "$CHECKOUT_CREDENTIAL_PLAN" ||
+  ! grep -Fq "make check" "$CHECKOUT_CREDENTIAL_PLAN"; then
+  printf '%s\n' "Checkout credential boundary plan must record completed make check verification." >&2
   exit 1
 fi
 

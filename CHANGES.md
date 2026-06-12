@@ -2,6 +2,8 @@
 
 ## 2026-06-12
 
+- Stopped GitHub Actions checkout from persisting its credential and added an
+  exact contract for the sole workflow and checkout step.
 - Rejected fractional and non-finite float literals in vendor ID and price
   fields instead of truncating them or leaking conversion errors.
 - Added regression coverage for both integer fields and retained support for

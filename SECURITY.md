@@ -41,9 +41,9 @@ be validated before downloads and direct result writes. Remote page bodies
 must remain size-limited before decoding so an oversized response cannot consume
 unbounded process memory.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
-commit-pinned actions, read-only repository access, and bounded execution so
-parser, scraper argument, endpoint, and output-path guardrails stay enforced
-before merge.
+commit-pinned actions, read-only repository access, a credential-free checkout,
+and bounded execution so parser, scraper argument, endpoint, and output-path
+guardrails stay enforced before merge.
 
 ## Dependency and Supply Chain Security
 
