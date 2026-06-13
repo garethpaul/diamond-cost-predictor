@@ -159,16 +159,42 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
             def read(self, limit):
                 self.limit = limit
-                return b'first\nsecond\n'
+                return 'first\ncaf\u00e9 \u6771\u4eac\n'.encode('utf-8')
 
         response = FakeResponse()
         psdownload.urlopen = lambda url, timeout: response
         try:
             self.assertEqual(
                 psdownload.read_lines('https://example.test/', 1),
-                ['first', 'second'],
+                ['first', 'caf\u00e9 \u6771\u4eac'],
             )
             self.assertEqual(response.limit, psdownload.MAX_RESPONSE_BYTES + 1)
+        finally:
+            psdownload.urlopen = original_urlopen
+
+    def test_read_lines_rejects_malformed_utf8_response(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self, limit):
+                return b'valid-prefix\xffprivate-tail'
+
+        psdownload.urlopen = lambda url, timeout: FakeResponse()
+        try:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+            self.assertEqual(
+                output.getvalue(),
+                '   Failed to download page: response was not valid UTF-8\n',
+            )
+            self.assertNotIn('private-tail', output.getvalue())
         finally:
             psdownload.urlopen = original_urlopen
 

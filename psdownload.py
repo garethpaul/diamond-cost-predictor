@@ -93,7 +93,12 @@ def read_lines(url, timeout):
             if len(payload) > MAX_RESPONSE_BYTES:
                 print("   Failed to download page: response exceeded byte limit")
                 return []
-            return payload.decode("utf-8", "replace").splitlines()
+            try:
+                decoded = payload.decode("utf-8")
+            except UnicodeDecodeError:
+                print("   Failed to download page: response was not valid UTF-8")
+                return []
+            return decoded.splitlines()
     except (TimeoutError, socket.timeout, URLError) as exc:
         print("   Failed to download page: {0}".format(exc))
         return []

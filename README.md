@@ -83,8 +83,9 @@ Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout. Each downloaded page is capped at 2 MiB before decoding
-to prevent an oversized remote response from exhausting process memory. Parser
+HTTPS with a timeout. Each downloaded page is capped at 2 MiB and decoded as
+strict UTF-8, preventing oversized or malformed remote responses from entering
+the scraper as repaired text. Parser
 tests also reject boolean literals and non-finite or non-positive numeric model
 inputs, so generated CSV rows contain finite positive values. Vendor IDs and
 prices must be exact positive integers, so fractional float literals cannot be
@@ -114,6 +115,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` rejects page responses larger than 2 MiB before decoding.
+- `psdownload.py` rejects malformed UTF-8 page responses without logging their
+  bytes or inserting replacement characters into scraped records.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` bounds each invocation to a `0.5` carat span and rejects
   non-advancing floating-point range steps.

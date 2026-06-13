@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-13
+
+- Rejected malformed UTF-8 scraper responses at page scope instead of
+  inserting replacement characters into downloaded diamond records.
+
 ## 2026-06-12
 
 - Stopped GitHub Actions checkout from persisting its credential and added an

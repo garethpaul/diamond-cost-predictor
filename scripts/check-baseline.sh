@@ -16,6 +16,7 @@ CHECKOUT_CREDENTIAL_PLAN="$ROOT_DIR/docs/plans/2026-06-12-checkout-credential-bo
 RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
 EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md"
 RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.md"
+STRICT_RESPONSE_UTF8_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-strict-response-utf8.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -58,6 +59,7 @@ for path in \
   "docs/plans/2026-06-10-scraper-response-limit.md" \
   "docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md" \
   "docs/plans/2026-06-12-scraper-range-work-limit.md" \
+  "docs/plans/2026-06-13-scraper-strict-response-utf8.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -417,6 +419,14 @@ if ! grep -Fq "MAX_RESPONSE_BYTES = 2 * 1024 * 1024" "$ROOT_DIR/psdownload.py" |
   exit 1
 fi
 
+if ! grep -Fq 'decoded = payload.decode("utf-8")' "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "except UnicodeDecodeError:" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "response was not valid UTF-8" "$ROOT_DIR/psdownload.py" ||
+  grep -Fq 'decode("utf-8", "replace")' "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "psdownload.py must reject malformed UTF-8 pages without replacement decoding." >&2
+  exit 1
+fi
+
 if ! grep -Fq "argparse.ArgumentParser" "$ROOT_DIR/psdownload.py"; then
   printf '%s\n' "psdownload.py must expose explicit CLI arguments." >&2
   exit 1
@@ -519,8 +529,27 @@ if ! grep -Fq "test_pricescope_endpoint_rejects_query_strings_and_fragments" "$S
 fi
 
 if ! grep -Fq "test_read_lines_accepts_bounded_utf8_response" "$SCRAPER_TESTS" ||
-  ! grep -Fq "test_read_lines_rejects_oversized_response" "$SCRAPER_TESTS"; then
-  printf '%s\n' "Scraper tests must cover bounded and oversized page responses." >&2
+  ! grep -Fq "test_read_lines_rejects_oversized_response" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_read_lines_rejects_malformed_utf8_response" "$SCRAPER_TESTS" ||
+  ! grep -Fq "caf\\u00e9 \\u6771\\u4eac" "$SCRAPER_TESTS" ||
+  ! grep -Fq "self.assertNotIn('private-tail', output.getvalue())" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover bounded, oversized, and malformed UTF-8 page responses." >&2
+  exit 1
+fi
+
+if ! grep -Fq "strict UTF-8" "$README" ||
+  ! grep -Fq "Rejected malformed UTF-8" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "Reject malformed UTF-8" "$VISION" ||
+  ! grep -Fq "strict UTF-8" "$ROOT_DIR/SECURITY.md"; then
+  printf '%s\n' "Project docs must record strict scraper response decoding." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$STRICT_RESPONSE_UTF8_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$STRICT_RESPONSE_UTF8_PLAN" ||
+  ! grep -Fq "Eleven hostile mutations were rejected" "$STRICT_RESPONSE_UTF8_PLAN" ||
+  ! grep -Fq "no live PriceScope" "$STRICT_RESPONSE_UTF8_PLAN"; then
+  printf '%s\n' "Strict response UTF-8 plan must record completed local verification and network limits." >&2
   exit 1
 fi
 

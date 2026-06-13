@@ -38,8 +38,8 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 For this scraper sample, keep endpoint overrides constrained to HTTPS hosts
 without embedded credentials, query strings, or fragments. Output paths should
 be validated before downloads and direct result writes. Remote page bodies
-must remain size-limited before decoding so an oversized response cannot consume
-unbounded process memory.
+must remain size-limited and use strict UTF-8 decoding so oversized or malformed
+responses cannot consume unbounded memory or silently alter scraped records.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
 commit-pinned actions, read-only repository access, a credential-free checkout,
 and bounded execution so parser, scraper argument, endpoint, and output-path
