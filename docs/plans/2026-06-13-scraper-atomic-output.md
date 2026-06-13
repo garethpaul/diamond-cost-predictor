@@ -2,7 +2,7 @@
 title: Scraper Atomic Output
 type: fix
 date: 2026-06-13
-status: planned
+status: completed
 ---
 
 # Scraper Atomic Output
@@ -73,14 +73,20 @@ finish successfully.
 
 ## Verification
 
-- Run `python scripts/test-psdownload.py`, `make check`, and the absolute-path
-  `make check` wrapper from `/tmp` under available supported Python versions.
-- Run shell syntax, Python compilation, whitespace, secret, and artifact checks.
-- Apply isolated hostile mutations for direct destination writes, omitted
-  `fsync`, non-atomic rename, wrong staging directory, swallowed conversion
-  failures, missing preservation/cleanup fixtures, documentation drift, and
-  incomplete plan status; each mutation must fail.
-- Do not make live PriceScope requests or claim R-model execution.
+- `scripts/test-safe-parsing.py` passed 12 tests and
+  `scripts/test-psdownload.py` passed 23 tests on Python 3.12.8 and Python
+  3.14.0.
+- `make check` passed on Python 3.12.8 and Python 3.14.0, including the static
+  baseline, both offline test suites, and Python compilation. The rooted
+  absolute-path wrapper also passed from `/tmp` with Python 3.12.8.
+- Shell syntax, `git diff --check`, explicit secret-pattern inspection, and
+  generated-artifact inspection passed.
+- Nine hostile mutations were rejected for direct destination writes, omitted
+  `fsync`, non-atomic rename, wrong staging directory, omitted cleanup, each
+  required regression contract, and documentation drift.
+- Browser testing was not applicable to this command-line scraper, and
+  `agent-browser` was not installed. Verification made no live PriceScope
+  request and performed no R-model execution.
 
 ## Prioritized Follow-Ups
 

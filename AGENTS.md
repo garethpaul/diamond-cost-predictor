@@ -47,6 +47,8 @@
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and rejects endpoint overrides without a host, with embedded credentials, or with query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
+- `psdownload.py` must preserve existing output until atomic replacement of a
+  fully written and synced same-directory staged file.
 
 ## Agent workflow
 

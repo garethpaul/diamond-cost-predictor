@@ -3,6 +3,7 @@ import argparse
 import math
 import os
 import socket
+import tempfile
 from urllib.error import URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
@@ -172,9 +173,36 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
 
 def write_diamonds(path, diamonds):
     validate_output_path(path)
-    with open(path, "w", encoding="utf-8") as diamond_file:
-        for diamond in diamonds:
-            diamond_file.write(str(diamond) + "\n")
+    destination = os.path.abspath(os.fspath(path))
+    output_directory = os.path.dirname(destination) or "."
+    output_name = os.path.basename(destination)
+    descriptor = None
+    temporary_path = None
+
+    try:
+        descriptor, temporary_path = tempfile.mkstemp(
+            prefix=".{0}.".format(output_name),
+            suffix=".tmp",
+            dir=output_directory,
+            text=True,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as diamond_file:
+            descriptor = None
+            for diamond in diamonds:
+                diamond_file.write(str(diamond) + "\n")
+            diamond_file.flush()
+            os.fsync(diamond_file.fileno())
+
+        os.replace(temporary_path, destination)
+        temporary_path = None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary_path is not None:
+            try:
+                os.unlink(temporary_path)
+            except FileNotFoundError:
+                pass
 
 
 def parse_args(argv=None):

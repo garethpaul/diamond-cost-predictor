@@ -17,6 +17,7 @@ RESPONSE_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-10-scraper-response-limit.md"
 EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md"
 RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.md"
 STRICT_RESPONSE_UTF8_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-strict-response-utf8.md"
+ATOMIC_OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-atomic-output.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -518,6 +519,23 @@ if ! grep -Fq "test_write_diamonds_rejects_blank_output_path" "$SCRAPER_TESTS"; 
   exit 1
 fi
 
+if ! grep -Fq "tempfile.mkstemp(" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "dir=output_directory" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "diamond_file.flush()" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "os.fsync(diamond_file.fileno())" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "os.replace(temporary_path, destination)" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "os.unlink(temporary_path)" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper output must use same-directory durable staging and atomic replacement." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_write_diamonds_atomically_replaces_output_in_destination_directory" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_write_diamonds_preserves_output_when_record_conversion_fails" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_write_diamonds_preserves_output_when_atomic_replace_fails" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover atomic output, failure preservation, and cleanup." >&2
+  exit 1
+fi
+
 if ! grep -Fq "test_pricescope_endpoint_rejects_embedded_credentials" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover credential-bearing endpoint overrides." >&2
   exit 1
@@ -550,6 +568,22 @@ if ! grep -Fq "status: completed" "$STRICT_RESPONSE_UTF8_PLAN" ||
   ! grep -Fq "Eleven hostile mutations were rejected" "$STRICT_RESPONSE_UTF8_PLAN" ||
   ! grep -Fq "no live PriceScope" "$STRICT_RESPONSE_UTF8_PLAN"; then
   printf '%s\n' "Strict response UTF-8 plan must record completed local verification and network limits." >&2
+  exit 1
+fi
+
+if ! grep -Fq "atomic replacement" "$README" ||
+  ! grep -Fq "Published scraper output atomically" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "Publish scraper output atomically" "$VISION" ||
+  ! grep -Fq "atomic replacement" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Project docs must record atomic scraper output publication." >&2
+  exit 1
+fi
+
+if ! grep -Fq "status: completed" "$ATOMIC_OUTPUT_PLAN" ||
+  ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$ATOMIC_OUTPUT_PLAN" ||
+  ! grep -Fq "hostile mutations were rejected" "$ATOMIC_OUTPUT_PLAN" ||
+  ! grep -Fq "no live PriceScope" "$ATOMIC_OUTPUT_PLAN"; then
+  printf '%s\n' "Atomic output plan must record completed local verification and network limits." >&2
   exit 1
 fi
 

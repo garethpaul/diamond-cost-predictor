@@ -5,6 +5,7 @@ import io
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlparse
 
@@ -124,12 +125,50 @@ class PriceScopeDownloadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             list(psdownload.drange(1e20, 1e20 + 1e6, psdownload.DEFAULT_STEP))
 
-    def test_write_diamonds_writes_one_record_per_line(self):
+    def test_write_diamonds_atomically_replaces_output_in_destination_directory(self):
         with tempfile.TemporaryDirectory() as directory:
             output = pathlib.Path(directory) / 'diamonds.txt'
-            psdownload.write_diamonds(output, ['first', 'second'])
+            output.write_text('previous\n', encoding='utf-8')
+            staged_directories = []
+            original_mkstemp = psdownload.tempfile.mkstemp
+
+            def recording_mkstemp(*args, **kwargs):
+                staged_directories.append(pathlib.Path(kwargs['dir']))
+                return original_mkstemp(*args, **kwargs)
+
+            with mock.patch.object(psdownload.tempfile, 'mkstemp', recording_mkstemp):
+                psdownload.write_diamonds(output, ['first', 'second'])
 
             self.assertEqual(output.read_text(encoding='utf-8'), 'first\nsecond\n')
+            self.assertEqual(staged_directories, [output.parent.resolve()])
+            self.assertEqual(list(output.parent.iterdir()), [output])
+
+    def test_write_diamonds_preserves_output_when_record_conversion_fails(self):
+        class BrokenRecord:
+            def __str__(self):
+                raise RuntimeError('cannot serialize')
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            output.write_text('previous\n', encoding='utf-8')
+
+            with self.assertRaisesRegex(RuntimeError, 'cannot serialize'):
+                psdownload.write_diamonds(output, ['first', BrokenRecord()])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
+            self.assertEqual(list(output.parent.iterdir()), [output])
+
+    def test_write_diamonds_preserves_output_when_atomic_replace_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            output.write_text('previous\n', encoding='utf-8')
+
+            with mock.patch.object(psdownload.os, 'replace', side_effect=OSError('replace failed')):
+                with self.assertRaisesRegex(OSError, 'replace failed'):
+                    psdownload.write_diamonds(output, ['replacement'])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
+            self.assertEqual(list(output.parent.iterdir()), [output])
 
     def test_write_diamonds_rejects_blank_output_path(self):
         with self.assertRaises(ValueError):

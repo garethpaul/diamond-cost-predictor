@@ -65,6 +65,9 @@ plus ranges where `max_carat` is not greater than `min_carat`, before making
 requests. Each invocation is limited to a `0.5` carat span, and range iteration
 fails if floating-point addition cannot advance the next bucket. The CLI also
 rejects blank output paths before any download loop is started.
+Completed downloads are staged beside the requested output, durably flushed,
+and published with atomic replacement, so a serialization or publication
+failure preserves an existing dataset instead of truncating it.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
