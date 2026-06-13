@@ -200,6 +200,9 @@ class PriceScopeDownloadTests(unittest.TestCase):
                 self.limit = limit
                 return 'first\ncaf\u00e9 \u6771\u4eac\n'.encode('utf-8')
 
+            def geturl(self):
+                return 'https://example.test/redirected?page=1'
+
         response = FakeResponse()
         psdownload.urlopen = lambda url, timeout: response
         try:
@@ -223,6 +226,9 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
             def read(self, limit):
                 return b'valid-prefix\xffprivate-tail'
+
+            def geturl(self):
+                return 'https://example.test/'
 
         psdownload.urlopen = lambda url, timeout: FakeResponse()
         try:
@@ -250,12 +256,69 @@ class PriceScopeDownloadTests(unittest.TestCase):
             def read(self, limit):
                 return b'x' * limit
 
+            def geturl(self):
+                return 'https://example.test/'
+
         psdownload.urlopen = lambda url, timeout: FakeResponse()
         try:
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
         finally:
             psdownload.urlopen = original_urlopen
+
+    def test_read_lines_rejects_untrusted_response_origins_before_body_read(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __init__(self, final_url):
+                self.final_url = final_url
+                self.read_calls = 0
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def geturl(self):
+                return self.final_url
+
+            def read(self, limit):
+                self.read_calls += 1
+                return b'private response body'
+
+        hostile_urls = [
+            'http://example.test/redirected',
+            'https://other.test/redirected',
+            'https://example.test:444/redirected',
+            'https://user:secret@example.test/redirected',
+            'https://example.test:invalid/redirected',
+        ]
+        try:
+            for final_url in hostile_urls:
+                response = FakeResponse(final_url)
+                psdownload.urlopen = lambda url, timeout, response=response: response
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    self.assertEqual(psdownload.read_lines('https://example.test/source', 1), [])
+                self.assertEqual(response.read_calls, 0)
+                self.assertEqual(
+                    output.getvalue(),
+                    '   Failed to download page: response origin was not trusted\n',
+                )
+                self.assertNotIn(final_url, output.getvalue())
+        finally:
+            psdownload.urlopen = original_urlopen
+
+    def test_response_origin_normalizes_default_https_port(self):
+        self.assertEqual(
+            psdownload.response_origin('https://EXAMPLE.test:443/path'),
+            ('example.test', 443),
+        )
+        psdownload.validate_response_origin(
+            'https://example.test/source',
+            'https://example.test:443/redirected?next=1',
+        )
 
 
 if __name__ == '__main__':

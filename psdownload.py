@@ -87,9 +87,32 @@ def build_url(shape, lower_size, upper_size, page, endpoint=None):
     return pricescope_ajax_url(endpoint) + "?" + urlencode(query)
 
 
+def response_origin(url):
+    parsed = urlparse(url)
+    if parsed.scheme.lower() != "https" or not parsed.hostname:
+        raise ValueError("response URL must use HTTPS with a host")
+    if parsed.username or parsed.password:
+        raise ValueError("response URL must not include credentials")
+    try:
+        port = parsed.port or 443
+    except ValueError:
+        raise ValueError("response URL port is invalid")
+    return parsed.hostname.lower(), port
+
+
+def validate_response_origin(request_url, response_url):
+    if response_origin(request_url) != response_origin(response_url):
+        raise ValueError("response URL changed origin")
+
+
 def read_lines(url, timeout):
     try:
         with urlopen(url, timeout=timeout) as response:
+            try:
+                validate_response_origin(url, response.geturl())
+            except (AttributeError, TypeError, ValueError):
+                print("   Failed to download page: response origin was not trusted")
+                return []
             payload = response.read(MAX_RESPONSE_BYTES + 1)
             if len(payload) > MAX_RESPONSE_BYTES:
                 print("   Failed to download page: response exceeded byte limit")

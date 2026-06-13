@@ -86,7 +86,8 @@ Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout. Each downloaded page is capped at 2 MiB and decoded as
+HTTPS with a timeout. The final response origin must remain HTTPS on the same
+host and normalized port before the body is read. Each downloaded page is capped at 2 MiB and decoded as
 strict UTF-8, preventing oversized or malformed remote responses from entering
 the scraper as repaired text. Parser
 tests also reject boolean literals and non-finite or non-positive numeric model
@@ -117,6 +118,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
+- `psdownload.py` rejects redirects whose final response origin downgrades from
+  HTTPS or changes host or port before reading the response body.
 - `psdownload.py` rejects page responses larger than 2 MiB before decoding.
 - `psdownload.py` rejects malformed UTF-8 page responses without logging their
   bytes or inserting replacement characters into scraped records.

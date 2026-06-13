@@ -1,13 +1,13 @@
 ---
 title: Scraper Response Origin Guard
 type: security
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
 # Scraper Response Origin Guard
 
-## Status: Planned
+## Status: Completed
 
 ## Problem Frame
 
@@ -58,3 +58,26 @@ or another origin while the scraper continues parsing and publishing the body.
   arbitrary explicit port.
 - Full network behavior remains dependent on urllib and PriceScope; local tests
   use deterministic fake responses and do not claim live endpoint validation.
+
+## Work Completed
+
+- Added normalized HTTPS origin parsing with credential, host, and port
+  validation.
+- Validated the final urllib response URL before reading page bytes, preserving
+  same-origin path and query redirects while rejecting downgrade and
+  cross-origin responses.
+- Added deterministic tests and synchronized source, documentation, and
+  completed-plan contracts.
+
+## Verification Completed
+
+- Python 3.12.8 and Python 3.14.0 each passed `make check`; Python 3.10 was not
+  installed locally.
+- All 12 parser tests and 25 scraper tests passed on each installed interpreter.
+- The absolute-path Make invocation from `/tmp`, Python compilation, shell
+  syntax, and `git diff --check` passed.
+- Ten isolated hostile mutations were rejected across scheme, host, port,
+  credentials, pre-read ordering, test fixtures, documentation, plan status,
+  and verification evidence.
+- No live PriceScope request was made; hosted CI remains responsible for the
+  Python 3.10 matrix leg.

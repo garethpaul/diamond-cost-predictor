@@ -46,6 +46,7 @@
 - Numeric parser validation rejects non-finite or non-positive model inputs before they are written to generated CSV rows.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and rejects endpoint overrides without a host, with embedded credentials, or with query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
+- `psdownload.py` must validate the final response origin before reading a page body.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` must preserve existing output until atomic replacement of a
   fully written and synced same-directory staged file.

@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Validated final scraper response origins before body reads, rejecting HTTPS
+  downgrades and cross-origin redirects.
 - Published scraper output atomically after same-directory staging, flush, and
   sync so failed writes preserve an existing dataset.
 - Rejected malformed UTF-8 scraper responses at page scope instead of

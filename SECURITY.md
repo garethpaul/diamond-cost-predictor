@@ -40,6 +40,8 @@ without embedded credentials, query strings, or fragments. Output paths should
 be validated before downloads and direct result writes. Remote page bodies
 must remain size-limited and use strict UTF-8 decoding so oversized or malformed
 responses cannot consume unbounded memory or silently alter scraped records.
+The final scraper response must remain HTTPS and same-origin before any body is
+read, preventing downgrade or cross-origin redirect ingestion.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
 commit-pinned actions, read-only repository access, a credential-free checkout,
 and bounded execution so parser, scraper argument, endpoint, and output-path

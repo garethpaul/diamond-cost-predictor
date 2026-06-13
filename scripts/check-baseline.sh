@@ -18,6 +18,7 @@ EXACT_INTEGER_PLAN="$ROOT_DIR/docs/plans/2026-06-12-001-fix-exact-integer-fields
 RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.md"
 STRICT_RESPONSE_UTF8_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-strict-response-utf8.md"
 ATOMIC_OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-atomic-output.md"
+RESPONSE_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-response-origin.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -61,6 +62,7 @@ for path in \
   "docs/plans/2026-06-12-001-fix-exact-integer-fields-plan.md" \
   "docs/plans/2026-06-12-scraper-range-work-limit.md" \
   "docs/plans/2026-06-13-scraper-strict-response-utf8.md" \
+  "docs/plans/2026-06-13-scraper-response-origin.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -413,6 +415,37 @@ if ! grep -Fq "except (TimeoutError, socket.timeout, URLError)" "$ROOT_DIR/psdow
   exit 1
 fi
 
+response_origin_body=$(awk '/^def response_origin\(url\):/ { capture = 1 } /^def validate_response_origin\(request_url, response_url\):/ { exit } capture { print }' "$ROOT_DIR/psdownload.py")
+for origin_contract in \
+  'parsed.scheme.lower() != "https"' \
+  'or not parsed.hostname' \
+  'parsed.username or parsed.password' \
+  'port = parsed.port or 443'; do
+  if ! printf '%s\n' "$response_origin_body" | grep -Fq "$origin_contract"; then
+    printf '%s\n' "psdownload.py response_origin must keep contract: $origin_contract" >&2
+    exit 1
+  fi
+done
+
+for origin_contract in \
+  'def response_origin(url):' \
+  'def validate_response_origin(request_url, response_url):' \
+  'validate_response_origin(url, response.geturl())' \
+  'response origin was not trusted'; do
+  if ! grep -Fq "$origin_contract" "$ROOT_DIR/psdownload.py"; then
+    printf '%s\n' "psdownload.py must keep response-origin contract: $origin_contract" >&2
+    exit 1
+  fi
+done
+
+origin_validation_line=$(grep -nF 'validate_response_origin(url, response.geturl())' "$ROOT_DIR/psdownload.py" | cut -d: -f1)
+response_read_line=$(grep -nF 'payload = response.read(MAX_RESPONSE_BYTES + 1)' "$ROOT_DIR/psdownload.py" | cut -d: -f1)
+if [ -z "$origin_validation_line" ] || [ -z "$response_read_line" ] ||
+  [ "$origin_validation_line" -ge "$response_read_line" ]; then
+  printf '%s\n' "Response origin validation must run before reading the body." >&2
+  exit 1
+fi
+
 if ! grep -Fq "MAX_RESPONSE_BYTES = 2 * 1024 * 1024" "$ROOT_DIR/psdownload.py" ||
   ! grep -Fq "response.read(MAX_RESPONSE_BYTES + 1)" "$ROOT_DIR/psdownload.py" ||
   ! grep -Fq "len(payload) > MAX_RESPONSE_BYTES" "$ROOT_DIR/psdownload.py"; then
@@ -555,6 +588,19 @@ if ! grep -Fq "test_read_lines_accepts_bounded_utf8_response" "$SCRAPER_TESTS" |
   exit 1
 fi
 
+if ! grep -Fq "test_read_lines_rejects_untrusted_response_origins_before_body_read" "$SCRAPER_TESTS" ||
+  ! grep -Fq "test_response_origin_normalizes_default_https_port" "$SCRAPER_TESTS" ||
+  ! grep -Fq "self.assertEqual(response.read_calls, 0)" "$SCRAPER_TESTS" ||
+  ! grep -Fq "https://other.test/redirected" "$SCRAPER_TESTS" ||
+  ! grep -Fq "http://example.test/redirected" "$SCRAPER_TESTS" ||
+  ! grep -Fq "https://example.test:444/redirected" "$SCRAPER_TESTS" ||
+  ! grep -Fq "https://user:secret@example.test/redirected" "$SCRAPER_TESTS" ||
+  ! grep -Fq "https://example.test:invalid/redirected" "$SCRAPER_TESTS" ||
+  ! grep -Fq "https://example.test:443/redirected?next=1" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover same-origin and pre-read redirect rejection." >&2
+  exit 1
+fi
+
 if ! grep -Fq "strict UTF-8" "$README" ||
   ! grep -Fq "Rejected malformed UTF-8" "$ROOT_DIR/CHANGES.md" ||
   ! grep -Fq "Reject malformed UTF-8" "$VISION" ||
@@ -578,6 +624,28 @@ if ! grep -Fq "atomic replacement" "$README" ||
   printf '%s\n' "Project docs must record atomic scraper output publication." >&2
   exit 1
 fi
+
+if [ "$(grep -Fc "final response origin" "$README")" -ne 2 ] ||
+  ! grep -Fq "final scraper response" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "Validated final scraper response origins" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "Validate final scraper response origins" "$VISION" ||
+  ! grep -Fq "final response origin" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Project docs must record final scraper response-origin validation." >&2
+  exit 1
+fi
+
+for plan_contract in \
+  'status: completed' \
+  '## Status: Completed' \
+  '## Work Completed' \
+  '## Verification Completed' \
+  'Python 3.12.8 and Python 3.14.0' \
+  'Ten isolated hostile mutations were rejected'; do
+  if ! grep -Fq "$plan_contract" "$RESPONSE_ORIGIN_PLAN"; then
+    printf '%s\n' "Response-origin plan must keep completed evidence: $plan_contract" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "status: completed" "$ATOMIC_OUTPUT_PLAN" ||
   ! grep -Fq "Python 3.12.8 and Python 3.14.0" "$ATOMIC_OUTPUT_PLAN" ||
