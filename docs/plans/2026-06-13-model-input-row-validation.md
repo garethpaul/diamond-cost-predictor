@@ -1,13 +1,13 @@
 ---
 title: Diamond Model Input Row Validation
 type: reliability
-status: planned
+status: completed
 date: 2026-06-13
 ---
 
 # Diamond Model Input Row Validation
 
-## Status: Planned
+## Status: Completed
 
 ## Problem Frame
 
@@ -64,3 +64,29 @@ the producer's finite-positive numeric contract.
 - Isolated hostile mutations for missing field-count validation, finite checks,
   positivity checks, line-number context, graph integration, stale status, and
   missing verification evidence must each fail the checker.
+
+## Work Completed
+
+- Added a dependency-free parser for the six model fields consumed from the
+  producer's exact ten-column CSV schema.
+- Rejected truncated, extra-field, blank, empty, non-finite, non-positive, and
+  non-integer model input with input path and one-based line diagnostics.
+- Refactored `graph.py` to validate all rows before its sole deferred `rpy2`
+  import while preserving vectors, formula, prediction, and PDF behavior.
+- Added offline tests, Make integration, static contracts, and maintenance
+  documentation without changing scraper output or adding dependencies.
+
+## Verification Completed
+
+- Focused model-input validation passed 9 tests on Python 3.12 and Python 3.14,
+  including production entry-point rejection before the unavailable rpy2 import.
+- `make lint`, `make test`, `make build`, `make check`, and `make verify` passed
+  on Python 3.12 and Python 3.14.
+- External-working-directory `make check`, `sh -n scripts/check-baseline.sh`,
+  and `git diff --check` passed.
+- Seven isolated hostile mutations were rejected: missing field-count
+  validation, removed finite validation, removed positivity validation, removed
+  path/line context, model loading after rpy2 import, stale completion status,
+  and missing mutation-verification evidence.
+- No R model or PDF execution is claimed because R and rpy2 are unavailable on
+  this host.

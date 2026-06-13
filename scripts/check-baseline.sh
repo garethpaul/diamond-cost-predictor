@@ -19,11 +19,15 @@ RANGE_WORK_LIMIT_PLAN="$ROOT_DIR/docs/plans/2026-06-12-scraper-range-work-limit.
 STRICT_RESPONSE_UTF8_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-strict-response-utf8.md"
 ATOMIC_OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-atomic-output.md"
 RESPONSE_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-response-origin.md"
+MODEL_INPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-model-input-row-validation.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
+MODEL_INPUT="$ROOT_DIR/model_input.py"
+MODEL_INPUT_TESTS="$ROOT_DIR/scripts/test-model-input.py"
+GRAPH="$ROOT_DIR/graph.py"
 
 require_file() {
   path=$1
@@ -41,11 +45,13 @@ for path in \
   "Makefile" \
   "csv.py" \
   "psdownload.py" \
+  "model_input.py" \
   "graph.py" \
   "lm.py" \
   "scripts/check-baseline.sh" \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
+  "scripts/test-model-input.py" \
   "docs/plans/2026-06-08-diamond-check-wrapper.md" \
   "docs/plans/2026-06-08-pricescope-https-baseline.md" \
   "docs/plans/2026-06-08-numeric-field-validation.md" \
@@ -63,8 +69,71 @@ for path in \
   "docs/plans/2026-06-12-scraper-range-work-limit.md" \
   "docs/plans/2026-06-13-scraper-strict-response-utf8.md" \
   "docs/plans/2026-06-13-scraper-response-origin.md" \
+  "docs/plans/2026-06-13-model-input-row-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
+done
+
+if ! grep -Fq "EXPECTED_FIELD_COUNT = 10" "$MODEL_INPUT" ||
+  ! grep -Fq "len(fields) != EXPECTED_FIELD_COUNT" "$MODEL_INPUT" ||
+  ! grep -Fq "math.isfinite(number)" "$MODEL_INPUT" ||
+  ! grep -Fq "number <= 0" "$MODEL_INPUT" ||
+  ! grep -Fq "{0}:{1}: {2}" "$MODEL_INPUT" ||
+  ! grep -Fq "model input must contain at least one row" "$MODEL_INPUT"; then
+  printf '%s\n' "Model input rows must keep exact shape, numeric, and diagnostic validation." >&2
+  exit 1
+fi
+
+for model_test in \
+  "test_parse_model_row_returns_typed_model_fields" \
+  "test_rejects_truncated_and_extra_rows" \
+  "test_rejects_non_finite_carat" \
+  "test_rejects_non_positive_model_values" \
+  "test_rejects_non_integer_model_categories" \
+  "test_load_model_rows_reports_path_and_line" \
+  "test_load_model_rows_rejects_blank_rows" \
+  "test_load_model_rows_rejects_empty_file" \
+  "test_graph_rejects_invalid_input_before_rpy2_import"; do
+  if ! grep -Fq "$model_test" "$MODEL_INPUT_TESTS"; then
+    printf '%s\n' "Model input tests must retain case: $model_test" >&2
+    exit 1
+  fi
+done
+
+load_marker='rows = load_model_rows("output.csv")'
+rpy_marker='    import rpy2'
+if [ "$(grep -Fc "$load_marker" "$GRAPH")" -ne 1 ] ||
+  [ "$(grep -Fxc "$rpy_marker" "$GRAPH")" -ne 1 ]; then
+  printf '%s\n' "graph.py must retain one validated input load and deferred rpy2 import." >&2
+  exit 1
+fi
+load_line=$(grep -nF "$load_marker" "$GRAPH" | cut -d: -f1)
+rpy_line=$(grep -nFx "$rpy_marker" "$GRAPH" | cut -d: -f1)
+if [ -z "$load_line" ] || [ -z "$rpy_line" ] || [ "$load_line" -ge "$rpy_line" ]; then
+  printf '%s\n' "graph.py must validate output.csv before loading rpy2." >&2
+  exit 1
+fi
+
+if ! grep -Fq "validates every output.csv row" "$README" ||
+  ! grep -Fq "Validate generated model rows before R execution" "$VISION" ||
+  ! grep -Fq "Validated generated model rows" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "producer's exact ten-field shape" "$ROOT_DIR/AGENTS.md" ||
+  ! grep -Fq "R2. Every row must contain exactly ten comma-separated fields." "$MODEL_INPUT_PLAN"; then
+  printf '%s\n' "Model input validation documentation and plan contracts must remain checked in." >&2
+  exit 1
+fi
+
+for model_plan_contract in \
+  "status: completed" \
+  "## Status: Completed" \
+  "make verify" \
+  "9 tests" \
+  "isolated hostile mutations were rejected" \
+  "No R model or PDF execution is claimed"; do
+  if ! grep -Fq "$model_plan_contract" "$MODEL_INPUT_PLAN"; then
+    printf '%s\n' "Model input plan must record completed verification: $model_plan_contract" >&2
+    exit 1
+  fi
 done
 
 workflow_count=$(find "$ROOT_DIR/.github/workflows" -type f \( -name '*.yml' -o -name '*.yaml' \) | wc -l | tr -d ' ')
@@ -99,7 +168,7 @@ if ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW"; then
 fi
 
 if ! grep -Fq 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' "$MAKEFILE" ||
-  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 9 ]; then
+  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 12 ]; then
   printf '%s\n' "Make verification must resolve scripts and Python files from the repository root." >&2
   exit 1
 fi

@@ -50,6 +50,8 @@
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` must preserve existing output until atomic replacement of a
   fully written and synced same-directory staged file.
+- `output.csv` rows must preserve the producer's exact ten-field shape and pass
+  finite-positive model validation before `graph.py` loads rpy2.
 
 ## Agent workflow
 

@@ -71,6 +71,9 @@ failure preserves an existing dataset instead of truncating it.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
+Before loading rpy2, `graph.py` validates every output.csv row through the
+dependency-free model loader. Truncated, extra-field, blank, non-finite,
+non-positive, and non-integer model rows fail with path and line context.
 
 ## Testing and Verification
 
@@ -114,6 +117,8 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Numeric parser validation rejects non-finite or non-positive model inputs,
   boolean literals, and fractional vendor IDs or prices before they are written
   to generated CSV rows.
+- Generated model input retains an exact ten-field row contract and is validated
+  before R/rpy2 loading.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.

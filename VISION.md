@@ -32,6 +32,7 @@ Priority:
 - Publish scraper output atomically only after durable same-directory staging
 - Reject boolean literals in numeric diamond fields before model generation
 - Require vendor IDs and prices to be exact positive integers
+- Validate generated model rows before R execution
 - Keep GitHub Actions aligned with the local Python `make check` baseline
   without persisting the checkout credential
 - Keep the model formula and graph generation easy to inspect

@@ -2,6 +2,8 @@
 
 ## 2026-06-13
 
+- Validated generated model rows before loading rpy2, with exact field counts,
+  finite-positive values, and path/line diagnostics.
 - Validated final scraper response origins before body reads, rejecting HTTPS
   downgrades and cross-origin redirects.
 - Published scraper output atomically after same-directory staging, flush, and

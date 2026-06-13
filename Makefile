@@ -9,9 +9,10 @@ lint:
 test:
 	$(PYTHON) $(ROOT)scripts/test-safe-parsing.py
 	$(PYTHON) $(ROOT)scripts/test-psdownload.py
+	$(PYTHON) $(ROOT)scripts/test-model-input.py
 
 build:
-	$(PYTHON) -m py_compile $(ROOT)csv.py $(ROOT)psdownload.py $(ROOT)graph.py $(ROOT)lm.py $(ROOT)scripts/test-safe-parsing.py $(ROOT)scripts/test-psdownload.py
+	$(PYTHON) -m py_compile $(ROOT)csv.py $(ROOT)psdownload.py $(ROOT)model_input.py $(ROOT)graph.py $(ROOT)lm.py $(ROOT)scripts/test-safe-parsing.py $(ROOT)scripts/test-psdownload.py $(ROOT)scripts/test-model-input.py
 
 verify: lint test build
 
