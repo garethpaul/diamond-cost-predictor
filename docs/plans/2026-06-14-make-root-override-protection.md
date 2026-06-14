@@ -1,13 +1,13 @@
 ---
 title: Make Repository Root Override Protection
 type: reliability
-status: active
+status: completed
 date: 2026-06-14
 ---
 
 # Make Repository Root Override Protection
 
-## Status: Active
+## Status: Completed
 
 ## Problem Frame
 
@@ -47,3 +47,22 @@ tracked gates.
 - Hostile command-line and environment `ROOT` assignments
 - `git diff --check`
 - Isolated hostile mutations for root override protection and static coverage
+
+## Work Completed
+
+- Protected the repository-root assignment with GNU Make's `override` directive
+  while preserving `PYTHON` as a caller-selected interpreter.
+- Registered the plan and exact protected assignment in the deterministic
+  baseline checker.
+- Preserved every existing verification target and repository-relative command.
+
+## Verification Completed
+
+- `sh -n scripts/check-baseline.sh` passed.
+- `make lint` and `make check` passed on Python 3.12.8 and Python 3.14.0.
+- External-working-directory `make -C <repository> lint` and `make -C
+  <repository> check` passed.
+- Full checks passed with both command-line and environment `ROOT=/tmp`
+  assignments, and every command still resolved inside the repository.
+- Three isolated hostile mutations were rejected: a regular assignment, a
+  conditional assignment, and a caller-working-directory assignment.

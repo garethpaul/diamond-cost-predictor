@@ -20,6 +20,7 @@ STRICT_RESPONSE_UTF8_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-strict-respon
 ATOMIC_OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-atomic-output.md"
 RESPONSE_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-response-origin.md"
 MODEL_INPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-model-input-row-validation.md"
+MAKE_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-14-make-root-override-protection.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -70,6 +71,7 @@ for path in \
   "docs/plans/2026-06-13-scraper-strict-response-utf8.md" \
   "docs/plans/2026-06-13-scraper-response-origin.md" \
   "docs/plans/2026-06-13-model-input-row-validation.md" \
+  "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -255,6 +257,24 @@ if ! grep -Fq "build:" "$ROOT_DIR/Makefile" || \
   printf '%s\n' "Makefile must expose build and include it in verification." >&2
   exit 1
 fi
+
+if ! grep -Fxq 'override ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' "$MAKEFILE"; then
+  printf '%s\n' "Makefile must protect its repository root from caller overrides." >&2
+  exit 1
+fi
+
+for plan_contract in \
+  'status: completed' \
+  '## Status: Completed' \
+  '## Work Completed' \
+  '## Verification Completed' \
+  'Python 3.12.8 and Python 3.14.0' \
+  'Three isolated hostile mutations were rejected'; do
+  if ! grep -Fq "$plan_contract" "$MAKE_ROOT_PLAN"; then
+    printf '%s\n' "Make-root plan must keep completed evidence: $plan_contract" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "ast.literal_eval" "$README"; then
   printf '%s\n' "README must document the safe parsing baseline." >&2
