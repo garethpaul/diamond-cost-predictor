@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-14
+
+- Added an exact-head model verification matrix with provenance, accuracy,
+  reproducibility, and artifact evidence fields kept explicitly unexecuted.
+
 ## 2026-06-13
 
 - Validated generated model rows before loading rpy2, with exact field counts,

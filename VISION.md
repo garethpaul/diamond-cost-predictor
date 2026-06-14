@@ -39,6 +39,8 @@ Priority:
 
 Next priorities:
 
+- Execute the diamond model verification matrix against an authorized source
+  and a pinned R/rpy2 environment
 - Add README setup, data-source, and reproduction instructions
 - Port scripts to a supported Python version in a dedicated pass
 - Keep structured diamond record parsing covered by regression tests

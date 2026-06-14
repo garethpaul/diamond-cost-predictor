@@ -1,6 +1,6 @@
 # Diamond Model Verification Matrix
 
-Status: In Progress
+Status: Completed
 
 ## Problem
 
@@ -34,4 +34,9 @@ or model quality.
 
 ## Verification
 
-- Pending implementation and bounded repository validation.
+- `sh -n scripts/check-baseline.sh` and the focused baseline checker passed.
+- `make check` passed under Python 3.12 and Python 3.14 from the repository and
+  from an external working directory.
+- Twelve isolated hostile mutations of the checklist, guidance, and completed
+  plan contracts were rejected by `scripts/check-baseline.sh`.
+- No live PriceScope access, R/rpy2 environment, model fit, evaluation metrics, residual review, prediction PDF, or reproducibility run was executed; every model row remains `not run`.

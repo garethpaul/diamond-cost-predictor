@@ -21,6 +21,7 @@ ATOMIC_OUTPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-atomic-output.md"
 RESPONSE_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-response-origin.md"
 MODEL_INPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-model-input-row-validation.md"
 MAKE_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-14-make-root-override-protection.md"
+MODEL_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-diamond-model-verification.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -272,6 +273,57 @@ for plan_contract in \
   'Three isolated hostile mutations were rejected'; do
   if ! grep -Fq "$plan_contract" "$MAKE_ROOT_PLAN"; then
     printf '%s\n' "Make-root plan must keep completed evidence: $plan_contract" >&2
+    exit 1
+  fi
+done
+
+for required_model_path in "$ROOT_DIR/MODEL_VERIFICATION.md" "$MODEL_VERIFICATION_PLAN"; do
+  if [ ! -f "$required_model_path" ]; then
+    printf '%s\n' "Required model verification file is missing: ${required_model_path#"$ROOT_DIR/"}" >&2
+    exit 1
+  fi
+done
+
+for model_contract in \
+  'commit SHA and pull request' \
+  'source permits the planned access' \
+  'Source terms review' \
+  'Live HTTPS source' \
+  'Bounded scrape' \
+  'Atomic dataset publication' \
+  'Dataset provenance' \
+  'Model row validation' \
+  'R/rpy2 environment' \
+  'Deterministic evaluation split' \
+  'Model fit' \
+  'Holdout accuracy' \
+  'Residual review' \
+  'Prediction PDF' \
+  'Reproducible rerun' \
+  'Do not convert `not run` into passing evidence.' \
+  'scraped proprietary rows, account data, source cookies' \
+  'every source, dataset, R, model, metric, residual, and artifact row as unexecuted'; do
+  if ! grep -Fq "$model_contract" "$ROOT_DIR/MODEL_VERIFICATION.md"; then
+    printf '%s\n' "Model checklist must keep contract: $model_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq 'MODEL_VERIFICATION.md' "$README" || \
+   ! grep -Fq 'explicit unexecuted rows' "$README" || \
+   ! grep -Fq 'diamond model verification matrix' "$VISION" || \
+   ! grep -Fq 'kept explicitly unexecuted' "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' 'Project guidance must document the unexecuted model matrix.' >&2
+  exit 1
+fi
+
+for model_plan_contract in \
+  'Status: Completed' \
+  'make check' \
+  'hostile mutations' \
+  'No live PriceScope access, R/rpy2 environment, model fit, evaluation metrics, residual review, prediction PDF, or reproducibility run was executed'; do
+  if ! grep -Fq "$model_plan_contract" "$MODEL_VERIFICATION_PLAN"; then
+    printf '%s\n' "Model verification plan must keep completion evidence: $model_plan_contract" >&2
     exit 1
   fi
 done

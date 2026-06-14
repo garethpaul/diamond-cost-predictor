@@ -106,6 +106,11 @@ checkout, and a bounded runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
 
+Use [`MODEL_VERIFICATION.md`](MODEL_VERIFICATION.md) to record exact-head live
+source, R/rpy2, model-quality, and generated-artifact evidence. Keep unavailable
+data-science scenarios as explicit unexecuted rows rather than treating parser,
+fixture, compile, or static checks as model execution.
+
 ## Configuration and Secrets
 
 - No required secret or credential file was identified in the repository scan. If you add integrations later, keep secrets out of git.
