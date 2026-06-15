@@ -22,6 +22,7 @@ RESPONSE_ORIGIN_PLAN="$ROOT_DIR/docs/plans/2026-06-13-scraper-response-origin.md
 MODEL_INPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-model-input-row-validation.md"
 MAKE_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-14-make-root-override-protection.md"
 MODEL_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-diamond-model-verification.md"
+PAGINATION_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -73,6 +74,7 @@ for path in \
   "docs/plans/2026-06-13-scraper-response-origin.md" \
   "docs/plans/2026-06-13-model-input-row-validation.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
+  "docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -682,6 +684,45 @@ if ! grep -Fq "test_collect_diamonds_validates_arguments_before_network" "$SCRAP
   printf '%s\n' "Scraper tests must cover direct helper argument validation." >&2
   exit 1
 fi
+
+if ! grep -Fq "RESULTS_PER_PAGE = 25" "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq "RESULTS_PER_PAGE * (page - 1) >= total_for_query" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper pagination must stop at exact 25-row result boundaries." >&2
+  exit 1
+fi
+
+for pagination_test in \
+  "test_collect_diamonds_stops_at_exact_page_boundaries" \
+  "test_collect_diamonds_requests_a_positive_partial_page" \
+  "test_collect_diamonds_keeps_bounded_fallback_for_malformed_total" \
+  "requested_pages_for_total"; do
+  if ! grep -Fq "$pagination_test" "$SCRAPER_TESTS"; then
+    printf '%s\n' "Scraper tests must retain pagination request-count coverage: $pagination_test" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "stops pagination at exact 25-row result boundaries" "$README" ||
+  ! grep -Fq "Avoid redundant scraper page requests at exact result boundaries" "$VISION" ||
+  ! grep -Fq "Stopped redundant PriceScope page requests at exact 25-row result boundaries" "$ROOT_DIR/CHANGES.md" ||
+  ! grep -Fq "must stop at exact reported result boundaries" "$ROOT_DIR/SECURITY.md" ||
+  ! grep -Fq "must not request a page whose start offset equals the reported result total" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Project guidance must record the exact pagination boundary." >&2
+  exit 1
+fi
+
+for pagination_plan_contract in \
+  'status: completed' \
+  '## Status: Completed' \
+  '## Work Completed' \
+  '## Verification Completed' \
+  'hostile mutations were rejected' \
+  'Live PriceScope access was not executed'; do
+  if ! grep -Fq "$pagination_plan_contract" "$PAGINATION_BOUNDARY_PLAN"; then
+    printf '%s\n' "Pagination boundary plan must keep completed evidence: $pagination_plan_contract" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "test_parse_args_rejects_blank_output_path" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover blank output path arguments." >&2

@@ -30,6 +30,27 @@ class PriceScopeDownloadTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 psdownload.parse_args(args)
 
+    def requested_pages_for_line(self, line):
+        requested_pages = []
+
+        def read_page(url, timeout):
+            del timeout
+            page = int(parse_qs(urlparse(url).query)['page'][0])
+            requested_pages.append(page)
+            return [line]
+
+        with mock.patch.object(psdownload, 'DIAMOND_TYPES', ['BR']):
+            with mock.patch.object(psdownload, 'read_lines', read_page):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    psdownload.collect_diamonds(0.25, 0.255, 1)
+
+        return requested_pages
+
+    def requested_pages_for_total(self, total):
+        return self.requested_pages_for_line(
+            'We have {0} <b>diamonds</b>'.format(total),
+        )
+
     def test_build_url_encodes_query_arguments(self):
         url = psdownload.build_url('BR', 0.25, 0.255, 3)
         parsed = urlparse(url)
@@ -116,6 +137,19 @@ class PriceScopeDownloadTests(unittest.TestCase):
                 psdownload.collect_diamonds(0.25, 0.751, 1)
         finally:
             psdownload.read_lines = original_read_lines
+
+    def test_collect_diamonds_stops_at_exact_page_boundaries(self):
+        self.assertEqual(self.requested_pages_for_total(25), [1])
+        self.assertEqual(self.requested_pages_for_total(50), [1, 2])
+
+    def test_collect_diamonds_requests_a_positive_partial_page(self):
+        self.assertEqual(self.requested_pages_for_total(26), [1, 2])
+
+    def test_collect_diamonds_keeps_bounded_fallback_for_malformed_total(self):
+        self.assertEqual(
+            self.requested_pages_for_line('No count here'),
+            list(range(1, 21)),
+        )
 
     def test_drange_rejects_invalid_or_non_advancing_steps(self):
         with self.assertRaises(ValueError):

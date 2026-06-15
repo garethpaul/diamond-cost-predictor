@@ -136,6 +136,8 @@ fixture, compile, or static checks as model execution.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` bounds each invocation to a `0.5` carat span and rejects
   non-advancing floating-point range steps.
+- `psdownload.py` stops pagination at exact 25-row result boundaries while
+  retaining positive partial pages and the bounded malformed-count fallback.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
 - The write helper also validates output paths before opening files.

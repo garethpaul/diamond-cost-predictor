@@ -1,7 +1,7 @@
 ---
 title: "fix: Stop redundant diamond page requests"
 type: fix
-status: planned
+status: completed
 date: 2026-06-15
 execution: code
 ---
@@ -103,3 +103,26 @@ Approach:
   stopping pagination.
 - Live source behavior remains outside local tests and must not be inferred from
   deterministic stubs.
+
+## Status: Completed
+
+## Work Completed
+
+- Named the 25-row PriceScope page size and corrected the page start-offset
+  comparison so exact result boundaries do not trigger an extra request.
+- Added deterministic request-count coverage for 25, 26, and 50 reported results.
+- Added source, test, documentation, and completed-plan contracts to the static
+  baseline.
+
+## Verification Completed
+
+- Focused scraper tests passed all 27 cases.
+- The static baseline passed through every implementation and documentation
+  contract before stopping at the intentionally incomplete plan-status gate.
+- Eight hostile mutations were rejected for comparison drift, page-size constant
+  deletion, exact, partial, and malformed-fallback request-count fixture removal,
+  documentation drift, stale plan status, and missing evidence.
+- Repository-root and absolute-path `make check` passed the static baseline,
+  all 48 parser/scraper/model-input tests, and Python compilation.
+- Live PriceScope access was not executed; deterministic response stubs prove
+  request counts without sending source traffic.

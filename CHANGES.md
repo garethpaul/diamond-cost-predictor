@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-15
+
+- Stopped redundant PriceScope page requests at exact 25-row result boundaries
+  while preserving partial-page and malformed-count fallback behavior.
+
 ## 2026-06-14
 
 - Added an exact-head model verification matrix with provenance, accuracy,

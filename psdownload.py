@@ -15,6 +15,7 @@ DEFAULT_STEP = 0.005
 DEFAULT_TIMEOUT = 15
 MAX_CARAT_SPAN = 0.5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+RESULTS_PER_PAGE = 25
 
 
 def drange(start, stop, step):
@@ -172,7 +173,7 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
             print("Downloading diamonds carat sized {0} to {1}".format(lower_size, upper_size))
 
             for page in range(1, 21):
-                if 25 * (page - 1) > total_for_query:
+                if RESULTS_PER_PAGE * (page - 1) >= total_for_query:
                     print("   Skipping page {0}/20".format(page))
                     continue
 

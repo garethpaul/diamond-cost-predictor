@@ -42,6 +42,8 @@ must remain size-limited and use strict UTF-8 decoding so oversized or malformed
 responses cannot consume unbounded memory or silently alter scraped records.
 The final scraper response must remain HTTPS and same-origin before any body is
 read, preventing downgrade or cross-origin redirect ingestion.
+Pagination must stop at exact reported result boundaries so the scraper does
+not issue redundant source requests that increase rate-limit exposure.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
 commit-pinned actions, read-only repository access, a credential-free checkout,
 and bounded execution so parser, scraper argument, endpoint, and output-path
