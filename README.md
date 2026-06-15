@@ -138,6 +138,8 @@ fixture, compile, or static checks as model execution.
   non-advancing floating-point range steps.
 - `psdownload.py` stops pagination at exact 25-row result boundaries while
   retaining positive partial pages and the bounded malformed-count fallback.
+- `psdownload.py` rejects negative reported result totals while preserving zero
+  results and the bounded malformed-count fallback.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
 - The write helper also validates output paths before opening files.

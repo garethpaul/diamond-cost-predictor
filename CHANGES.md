@@ -2,6 +2,8 @@
 
 ## 2026-06-15
 
+- Rejected negative PriceScope result totals while preserving zero-result
+  queries and bounded fallback pagination.
 - Stopped redundant PriceScope page requests at exact 25-row result boundaries
   while preserving partial-page and malformed-count fallback behavior.
 

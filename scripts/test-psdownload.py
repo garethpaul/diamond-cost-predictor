@@ -30,7 +30,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 psdownload.parse_args(args)
 
-    def requested_pages_for_line(self, line):
+    def scrape_for_line(self, line):
         requested_pages = []
 
         def read_page(url, timeout):
@@ -42,8 +42,12 @@ class PriceScopeDownloadTests(unittest.TestCase):
         with mock.patch.object(psdownload, 'DIAMOND_TYPES', ['BR']):
             with mock.patch.object(psdownload, 'read_lines', read_page):
                 with contextlib.redirect_stdout(io.StringIO()):
-                    psdownload.collect_diamonds(0.25, 0.255, 1)
+                    diamonds, found_total = psdownload.collect_diamonds(0.25, 0.255, 1)
 
+        return requested_pages, diamonds, found_total
+
+    def requested_pages_for_line(self, line):
+        requested_pages, _, _ = self.scrape_for_line(line)
         return requested_pages
 
     def requested_pages_for_total(self, total):
@@ -92,6 +96,10 @@ class PriceScopeDownloadTests(unittest.TestCase):
     def test_parse_total_falls_back_on_unexpected_markup(self):
         self.assertEqual(psdownload.parse_total('We have 42 <b>diamonds</b>', 500), 42)
         self.assertEqual(psdownload.parse_total('No count here', 17), 17)
+
+    def test_parse_total_accepts_zero_and_rejects_negative_counts(self):
+        self.assertEqual(psdownload.parse_total('We have 0 <b>diamonds</b>', 500), 0)
+        self.assertEqual(psdownload.parse_total('We have -1 <b>diamonds</b>', 500), 500)
 
     def test_parse_args_exposes_timeout_and_output_defaults(self):
         args = psdownload.parse_args(['0.25', '0.30'])
@@ -150,6 +158,15 @@ class PriceScopeDownloadTests(unittest.TestCase):
             self.requested_pages_for_line('No count here'),
             list(range(1, 21)),
         )
+
+    def test_collect_diamonds_keeps_bounded_fallback_for_negative_total(self):
+        requested_pages, diamonds, found_total = self.scrape_for_line(
+            'We have -1 <b>diamonds</b>',
+        )
+
+        self.assertEqual(requested_pages, list(range(1, 21)))
+        self.assertEqual(diamonds, [])
+        self.assertEqual(found_total, 500)
 
     def test_drange_rejects_invalid_or_non_advancing_steps(self):
         with self.assertRaises(ValueError):

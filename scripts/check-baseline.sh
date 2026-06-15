@@ -23,6 +23,7 @@ MODEL_INPUT_PLAN="$ROOT_DIR/docs/plans/2026-06-13-model-input-row-validation.md"
 MAKE_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-14-make-root-override-protection.md"
 MODEL_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-diamond-model-verification.md"
 PAGINATION_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md"
+NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-result-total.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -75,6 +76,7 @@ for path in \
   "docs/plans/2026-06-13-model-input-row-validation.md" \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md" \
+  "docs/plans/2026-06-15-scraper-nonnegative-result-total.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -720,6 +722,42 @@ for pagination_plan_contract in \
   'Live PriceScope access was not executed'; do
   if ! grep -Fq "$pagination_plan_contract" "$PAGINATION_BOUNDARY_PLAN"; then
     printf '%s\n' "Pagination boundary plan must keep completed evidence: $pagination_plan_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "return total if total >= 0 else fallback" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper result totals must reject negative cardinalities." >&2
+  exit 1
+fi
+
+for result_total_test in \
+  "test_parse_total_accepts_zero_and_rejects_negative_counts" \
+  "test_collect_diamonds_keeps_bounded_fallback_for_negative_total"; do
+  if ! grep -Fq "$result_total_test" "$SCRAPER_TESTS"; then
+    printf '%s\n' "Scraper tests must retain result-total integrity case: $result_total_test" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "rejects negative reported result totals" "$README" || \
+  ! grep -Fq "Reject negative upstream result totals" "$VISION" || \
+  ! grep -Fq "Rejected negative PriceScope result totals" "$ROOT_DIR/CHANGES.md" || \
+  ! grep -Fq "Reported scraper result totals must never be negative" "$ROOT_DIR/SECURITY.md" || \
+  ! grep -Fq "must reject negative reported result totals" "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Project guidance must record nonnegative scraper result totals." >&2
+  exit 1
+fi
+
+for result_total_plan_contract in \
+  'status: completed' \
+  '## Status: Completed' \
+  '## Work Completed' \
+  '## Verification Completed' \
+  'hostile mutations were rejected' \
+  'Live PriceScope access was not executed'; do
+  if ! grep -Fq "$result_total_plan_contract" "$NONNEGATIVE_TOTAL_PLAN"; then
+    printf '%s\n' "Nonnegative result-total plan must keep completed evidence: $result_total_plan_contract" >&2
     exit 1
   fi
 done

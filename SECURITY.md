@@ -44,6 +44,8 @@ The final scraper response must remain HTTPS and same-origin before any body is
 read, preventing downgrade or cross-origin redirect ingestion.
 Pagination must stop at exact reported result boundaries so the scraper does
 not issue redundant source requests that increase rate-limit exposure.
+Reported scraper result totals must never be negative; invalid counts retain
+the bounded fallback instead of truncating pagination or corrupting summaries.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
 commit-pinned actions, read-only repository access, a credential-free checkout,
 and bounded execution so parser, scraper argument, endpoint, and output-path

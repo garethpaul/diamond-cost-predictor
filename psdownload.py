@@ -131,9 +131,10 @@ def read_lines(url, timeout):
 
 def parse_total(line, fallback):
     try:
-        return int(line.split("have ")[1].split("<b>")[0].strip())
+        total = int(line.split("have ")[1].split("<b>")[0].strip())
     except (IndexError, ValueError):
         return fallback
+    return total if total >= 0 else fallback
 
 
 def validate_scrape_args(min_carat, max_carat, timeout):

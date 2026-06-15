@@ -1,7 +1,7 @@
 ---
 title: Scraper Nonnegative Result Total Guard
 type: reliability
-status: planned
+status: completed
 date: 2026-06-15
 execution: code
 ---
@@ -97,3 +97,25 @@ Approach:
   conservatively retain the existing 500-result bounded fallback.
 - Live PriceScope, source terms, provenance, R/rpy2, generated PDF, and model
   quality remain outside this change.
+
+## Status: Completed
+
+## Work Completed
+
+- Rejected parsed result totals below zero while preserving zero and positive
+  cardinalities.
+- Retained the existing 500-result bounded fallback for malformed and negative
+  counts, preventing premature pagination termination and negative summaries.
+- Added helper, request-count, static-contract, documentation, and completed-plan
+  coverage.
+
+## Verification Completed
+
+- Focused scraper tests passed all 30 cases.
+- Six hostile mutations were rejected for predicate removal, zero-result
+  rejection, helper-test removal, pagination-test removal, documentation drift,
+  and missing completion evidence.
+- Python 3.12 and 3.14 repository and external-directory `make check` passed all
+  51 parser, scraper, and model-input tests plus Python compilation.
+- Live PriceScope access was not executed; source terms, provenance, R/rpy2,
+  generated PDF, and model-quality evidence remain unexecuted.

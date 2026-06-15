@@ -49,6 +49,7 @@
 - `psdownload.py` must validate the final response origin before reading a page body.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` must not request a page whose start offset equals the reported result total.
+- `psdownload.py` must reject negative reported result totals while preserving zero-result queries.
 - `psdownload.py` must preserve existing output until atomic replacement of a
   fully written and synced same-directory staged file.
 - `output.csv` rows must preserve the producer's exact ten-field shape and pass
