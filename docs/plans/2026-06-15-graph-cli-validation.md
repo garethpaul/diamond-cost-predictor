@@ -1,6 +1,6 @@
 ---
 title: Graph CLI Validation
-status: in_progress
+status: completed
 date: 2026-06-15
 ---
 
@@ -40,6 +40,22 @@ invalid values are not rejected until after model input or rpy2 work begins.
   failure ordering, documentation, and plan evidence
 - Exact diff, Python artifact, whitespace, conflict-marker, and credential scans
 
-## Status: In Progress
+## Status: Completed
 
-Implementation and verification evidence will be recorded after the gates complete.
+## Work Completed
+
+- Added `parse_prediction_args` with exact arity, finite-positive carat and price,
+  and positive integer color and clarity validation.
+- Parsed optional prediction values before opening `output.csv` and retained the
+  no-argument model flow.
+- Added direct parser coverage, subprocess failure-order coverage, static source
+  contracts, and synchronized CLI guidance.
+
+## Verification Completed
+
+- The focused model-input and graph suite passed all 13 tests.
+- A clean static-check fixture passed, and eight isolated hostile mutations were rejected.
+- Python syntax compilation and shell syntax checks passed.
+- Repository-root and external-directory `make check` both passed all 55 tests
+  and Python compilation.
+- R/rpy2 model execution was not exercised.

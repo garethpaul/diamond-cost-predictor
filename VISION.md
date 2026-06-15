@@ -29,6 +29,7 @@ Priority:
 - Bound each remote scraper page before decoding it into memory
 - Avoid redundant scraper page requests at exact result boundaries
 - Reject negative upstream result totals without changing zero-result behavior
+- Validate graph prediction arguments before model execution
 - Reject malformed UTF-8 scraper pages instead of repairing remote records
 - Validate final scraper response origins before reading remote bodies
 - Publish scraper output atomically only after durable same-directory staging

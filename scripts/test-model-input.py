@@ -10,12 +10,67 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location('model_input', ROOT / 'model_input.py')
 MODEL_INPUT = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODEL_INPUT)
+sys.path.insert(0, str(ROOT))
+try:
+    GRAPH_SPEC = importlib.util.spec_from_file_location('graph', ROOT / 'graph.py')
+    GRAPH = importlib.util.module_from_spec(GRAPH_SPEC)
+    GRAPH_SPEC.loader.exec_module(GRAPH)
+finally:
+    sys.path.pop(0)
 
 
 VALID_ROW = '1,42,0.75,4,5,61.2,57,2,3,1250\n'
 
 
 class ModelInputTests(unittest.TestCase):
+    def test_graph_prediction_args_accept_none_or_four_valid_values(self):
+        self.assertIsNone(GRAPH.parse_prediction_args(['graph.py']))
+        self.assertEqual(
+            GRAPH.parse_prediction_args(['graph.py', '0.75', '4', '5', '1250']),
+            (0.75, 4, 5, 1250.0),
+        )
+
+    def test_graph_prediction_args_reject_partial_and_extra_values(self):
+        for argv in (
+            ['graph.py', '0.75'],
+            ['graph.py', '0.75', '4', '5'],
+            ['graph.py', '0.75', '4', '5', '1250', 'extra'],
+        ):
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(ValueError, 'expected either no prediction values'):
+                    GRAPH.parse_prediction_args(argv)
+
+    def test_graph_prediction_args_reject_invalid_numeric_values(self):
+        cases = (
+            (['graph.py', 'nan', '4', '5', '1250'], 'carat must be finite and positive'),
+            (['graph.py', '0', '4', '5', '1250'], 'carat must be finite and positive'),
+            (['graph.py', '0.75', '0', '5', '1250'], 'color must be a positive integer'),
+            (['graph.py', '0.75', '4.5', '5', '1250'], 'values must be numeric'),
+            (['graph.py', '0.75', '4', '0', '1250'], 'clarity must be a positive integer'),
+            (['graph.py', '0.75', '4', '5', 'inf'], 'price must be finite and positive'),
+            (['graph.py', '0.75', '4', '5', '0'], 'price must be finite and positive'),
+        )
+        for argv, message in cases:
+            with self.subTest(argv=argv):
+                with self.assertRaisesRegex(ValueError, message):
+                    GRAPH.parse_prediction_args(argv)
+
+    def test_graph_rejects_invalid_prediction_args_before_input_or_rpy2(self):
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [sys.executable, str(ROOT / 'graph.py'), '0.75', '4', '5', '0'],
+                cwd=directory,
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('prediction price must be finite and positive', result.stderr)
+            self.assertNotIn('Opening File', result.stdout)
+            self.assertNotIn('output.csv', result.stderr)
+            self.assertNotIn("No module named 'rpy2'", result.stderr)
+
     def test_parse_model_row_returns_typed_model_fields(self):
         row = MODEL_INPUT.parse_model_row(VALID_ROW)
 

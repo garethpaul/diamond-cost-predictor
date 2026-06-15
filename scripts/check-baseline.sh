@@ -24,6 +24,7 @@ MAKE_ROOT_PLAN="$ROOT_DIR/docs/plans/2026-06-14-make-root-override-protection.md
 MODEL_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-diamond-model-verification.md"
 PAGINATION_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md"
 NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-result-total.md"
+GRAPH_CLI_PLAN="$ROOT_DIR/docs/plans/2026-06-15-graph-cli-validation.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -77,6 +78,7 @@ for path in \
   "docs/plans/2026-06-14-make-root-override-protection.md" \
   "docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md" \
   "docs/plans/2026-06-15-scraper-nonnegative-result-total.md" \
+  "docs/plans/2026-06-15-graph-cli-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -92,6 +94,10 @@ if ! grep -Fq "EXPECTED_FIELD_COUNT = 10" "$MODEL_INPUT" ||
 fi
 
 for model_test in \
+  "test_graph_prediction_args_accept_none_or_four_valid_values" \
+  "test_graph_prediction_args_reject_partial_and_extra_values" \
+  "test_graph_prediction_args_reject_invalid_numeric_values" \
+  "test_graph_rejects_invalid_prediction_args_before_input_or_rpy2" \
   "test_parse_model_row_returns_typed_model_fields" \
   "test_rejects_truncated_and_extra_rows" \
   "test_rejects_non_finite_carat" \
@@ -107,6 +113,39 @@ for model_test in \
   fi
 done
 
+for graph_cli_contract in \
+  "def parse_prediction_args(argv):" \
+  "if len(argv) != 5:" \
+  "math.isfinite(carat)" \
+  "math.isfinite(price)" \
+  "color <= 0" \
+  "clarity <= 0" \
+  "prediction_args = parse_prediction_args(argv)"; do
+  if ! grep -Fq "$graph_cli_contract" "$GRAPH"; then
+    printf '%s\n' "graph.py must retain CLI validation contract: $graph_cli_contract" >&2
+    exit 1
+  fi
+done
+
+if [ ! -f "$GRAPH_CLI_PLAN" ] || \
+  ! grep -Fq "status: completed" "$GRAPH_CLI_PLAN" || \
+  ! grep -Fq "## Status: Completed" "$GRAPH_CLI_PLAN" || \
+  ! grep -Fq "make check" "$GRAPH_CLI_PLAN" || \
+  ! grep -Fq "hostile mutations were rejected" "$GRAPH_CLI_PLAN" || \
+  ! grep -Fq "R/rpy2 model execution was not exercised" "$GRAPH_CLI_PLAN"; then
+  printf '%s\n' "Graph CLI validation plan must record completed verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "graph prediction arguments require exactly four finite-positive values" "$README" || \
+  ! grep -Fq "Graph prediction arguments must be validated before model input or R execution" "$ROOT_DIR/SECURITY.md" || \
+  ! grep -Fq "Validate graph prediction arguments before model execution" "$VISION" || \
+  ! grep -Fq "Validated graph prediction CLI values before model input and R execution" "$ROOT_DIR/CHANGES.md" || \
+  ! grep -Fq '`graph.py` must validate optional prediction arguments before model input or rpy2' "$ROOT_DIR/AGENTS.md"; then
+  printf '%s\n' "Project guidance must document graph CLI validation." >&2
+  exit 1
+fi
+
 load_marker='rows = load_model_rows("output.csv")'
 rpy_marker='    import rpy2'
 if [ "$(grep -Fc "$load_marker" "$GRAPH")" -ne 1 ] ||
@@ -118,6 +157,11 @@ load_line=$(grep -nF "$load_marker" "$GRAPH" | cut -d: -f1)
 rpy_line=$(grep -nFx "$rpy_marker" "$GRAPH" | cut -d: -f1)
 if [ -z "$load_line" ] || [ -z "$rpy_line" ] || [ "$load_line" -ge "$rpy_line" ]; then
   printf '%s\n' "graph.py must validate output.csv before loading rpy2." >&2
+  exit 1
+fi
+parse_line=$(grep -nF "prediction_args = parse_prediction_args(argv)" "$GRAPH" | cut -d: -f1)
+if [ -z "$parse_line" ] || [ "$parse_line" -ge "$load_line" ]; then
+  printf '%s\n' "graph.py must validate prediction arguments before opening model input." >&2
   exit 1
 fi
 

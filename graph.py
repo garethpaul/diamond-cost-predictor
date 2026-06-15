@@ -1,14 +1,37 @@
+import math
 import sys
 
 from model_input import load_model_rows
 
 
+def parse_prediction_args(argv):
+    if len(argv) == 1:
+        return None
+    if len(argv) != 5:
+        raise ValueError('expected either no prediction values or carat color clarity price')
+
+    try:
+        carat = float(argv[1])
+        color = int(argv[2])
+        clarity = int(argv[3])
+        price = float(argv[4])
+    except ValueError:
+        raise ValueError('prediction values must be numeric')
+
+    if not math.isfinite(carat) or carat <= 0:
+        raise ValueError('prediction carat must be finite and positive')
+    if color <= 0:
+        raise ValueError('prediction color must be a positive integer')
+    if clarity <= 0:
+        raise ValueError('prediction clarity must be a positive integer')
+    if not math.isfinite(price) or price <= 0:
+        raise ValueError('prediction price must be finite and positive')
+
+    return carat, color, clarity, price
+
+
 def main(argv):
-    if len(argv) > 4:
-        ycar = float(argv[1])
-        ycol = int(argv[2])
-        ycla = int(argv[3])
-        ypri = float(argv[4])
+    prediction_args = parse_prediction_args(argv)
 
     print("Opening File")
     rows = load_model_rows("output.csv")
@@ -72,7 +95,8 @@ def main(argv):
     )
     ro.r.abline(comp, col="green", lty="dotted", lwd=3)
 
-    if len(argv) > 4:
+    if prediction_args is not None:
+        ycar, ycol, ycla, ypri = prediction_args
         ypred = coef[0] + coef[1] * ycar + coef[2] * ycol + coef[3] * ycla
         sdiam = (
             "Your Diamond: " + str(ycar) + " Carats, " + str(ycol) +
