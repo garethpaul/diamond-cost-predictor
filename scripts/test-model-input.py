@@ -25,10 +25,14 @@ VALID_ROW = '1,42,0.75,4,5,61.2,57,2,3,1250\n'
 class ModelInputTests(unittest.TestCase):
     def test_graph_prediction_args_accept_none_or_four_valid_values(self):
         self.assertIsNone(GRAPH.parse_prediction_args(['graph.py']))
-        self.assertEqual(
-            GRAPH.parse_prediction_args(['graph.py', '0.75', '4', '5', '1250']),
-            (0.75, 4, 5, 1250.0),
-        )
+        for color, clarity in ((1, 1), (4, 5), (6, 8)):
+            with self.subTest(color=color, clarity=clarity):
+                self.assertEqual(
+                    GRAPH.parse_prediction_args([
+                        'graph.py', '0.75', str(color), str(clarity), '1250'
+                    ]),
+                    (0.75, color, clarity, 1250.0),
+                )
 
     def test_graph_prediction_args_reject_partial_and_extra_values(self):
         for argv in (
@@ -44,9 +48,11 @@ class ModelInputTests(unittest.TestCase):
         cases = (
             (['graph.py', 'nan', '4', '5', '1250'], 'carat must be finite and positive'),
             (['graph.py', '0', '4', '5', '1250'], 'carat must be finite and positive'),
-            (['graph.py', '0.75', '0', '5', '1250'], 'color must be a positive integer'),
+            (['graph.py', '0.75', '0', '5', '1250'], 'color must be between 1 and 6'),
+            (['graph.py', '0.75', '7', '5', '1250'], 'color must be between 1 and 6'),
             (['graph.py', '0.75', '4.5', '5', '1250'], 'values must be numeric'),
-            (['graph.py', '0.75', '4', '0', '1250'], 'clarity must be a positive integer'),
+            (['graph.py', '0.75', '4', '0', '1250'], 'clarity must be between 1 and 8'),
+            (['graph.py', '0.75', '4', '9', '1250'], 'clarity must be between 1 and 8'),
             (['graph.py', '0.75', '4', '5', 'inf'], 'price must be finite and positive'),
             (['graph.py', '0.75', '4', '5', '0'], 'price must be finite and positive'),
         )
@@ -56,20 +62,26 @@ class ModelInputTests(unittest.TestCase):
                     GRAPH.parse_prediction_args(argv)
 
     def test_graph_rejects_invalid_prediction_args_before_input_or_rpy2(self):
-        with tempfile.TemporaryDirectory() as directory:
-            result = subprocess.run(
-                [sys.executable, str(ROOT / 'graph.py'), '0.75', '4', '5', '0'],
-                cwd=directory,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
+        cases = (
+            (['0.75', '7', '5', '1250'], 'prediction color must be between 1 and 6'),
+            (['0.75', '4', '5', '0'], 'prediction price must be finite and positive'),
+        )
+        for prediction_args, message in cases:
+            with self.subTest(prediction_args=prediction_args):
+                with tempfile.TemporaryDirectory() as directory:
+                    result = subprocess.run(
+                        [sys.executable, str(ROOT / 'graph.py')] + prediction_args,
+                        cwd=directory,
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
 
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn('prediction price must be finite and positive', result.stderr)
-            self.assertNotIn('Opening File', result.stdout)
-            self.assertNotIn('output.csv', result.stderr)
-            self.assertNotIn("No module named 'rpy2'", result.stderr)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
+                self.assertNotIn('Opening File', result.stdout)
+                self.assertNotIn('output.csv', result.stderr)
+                self.assertNotIn("No module named 'rpy2'", result.stderr)
 
     def test_parse_model_row_returns_typed_model_fields(self):
         row = MODEL_INPUT.parse_model_row(VALID_ROW)

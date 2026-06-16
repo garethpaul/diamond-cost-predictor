@@ -25,6 +25,7 @@ MODEL_VERIFICATION_PLAN="$ROOT_DIR/docs/plans/2026-06-14-diamond-model-verificat
 PAGINATION_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md"
 NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-result-total.md"
 GRAPH_CLI_PLAN="$ROOT_DIR/docs/plans/2026-06-15-graph-cli-validation.md"
+GRAPH_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-graph-category-range-validation.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -79,6 +80,7 @@ for path in \
   "docs/plans/2026-06-15-001-fix-pagination-boundary-plan.md" \
   "docs/plans/2026-06-15-scraper-nonnegative-result-total.md" \
   "docs/plans/2026-06-15-graph-cli-validation.md" \
+  "docs/plans/2026-06-16-graph-category-range-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -115,14 +117,28 @@ done
 
 for graph_cli_contract in \
   "def parse_prediction_args(argv):" \
+  "COLOR_RANGE = (1, 6)" \
+  "CLARITY_RANGE = (1, 8)" \
+  "def validate_category(value, field_name, allowed_range):" \
   "if len(argv) != 5:" \
   "math.isfinite(carat)" \
   "math.isfinite(price)" \
-  "color <= 0" \
-  "clarity <= 0" \
+  "validate_category(color, 'color', COLOR_RANGE)" \
+  "validate_category(clarity, 'clarity', CLARITY_RANGE)" \
   "prediction_args = parse_prediction_args(argv)"; do
   if ! grep -Fq "$graph_cli_contract" "$GRAPH"; then
     printf '%s\n' "graph.py must retain CLI validation contract: $graph_cli_contract" >&2
+    exit 1
+  fi
+done
+
+for graph_category_test in \
+  "for color, clarity in ((1, 1), (4, 5), (6, 8)):" \
+  "['graph.py', '0.75', '7', '5', '1250']" \
+  "['graph.py', '0.75', '4', '9', '1250']" \
+  "prediction color must be between 1 and 6"; do
+  if ! grep -Fq "$graph_category_test" "$MODEL_INPUT_TESTS"; then
+    printf '%s\n' "Graph tests must retain category boundary contract: $graph_category_test" >&2
     exit 1
   fi
 done
@@ -137,6 +153,21 @@ if [ ! -f "$GRAPH_CLI_PLAN" ] || \
   exit 1
 fi
 
+if [ "$(grep -c '^status: completed$' "$GRAPH_CATEGORY_RANGE_PLAN")" -ne 1 ]; then
+  printf '%s\n' "Graph category range plan must record completed status exactly once." >&2
+  exit 1
+fi
+for graph_category_evidence in \
+  'focused model/graph tests passed' \
+  'external-directory make check passed' \
+  'Six isolated hostile mutations were rejected' \
+  'Exact diff'; do
+  if ! grep -Fq "$graph_category_evidence" "$GRAPH_CATEGORY_RANGE_PLAN"; then
+    printf '%s\n' "Graph category range plan must preserve completed evidence: $graph_category_evidence" >&2
+    exit 1
+  fi
+done
+
 if ! grep -Fq "graph prediction arguments require exactly four finite-positive values" "$README" || \
   ! grep -Fq "Graph prediction arguments must be validated before model input or R execution" "$ROOT_DIR/SECURITY.md" || \
   ! grep -Fq "Validate graph prediction arguments before model execution" "$VISION" || \
@@ -145,6 +176,14 @@ if ! grep -Fq "graph prediction arguments require exactly four finite-positive v
   printf '%s\n' "Project guidance must document graph CLI validation." >&2
   exit 1
 fi
+
+for graph_category_doc in "$README" "$VISION" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/AGENTS.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fqi "color 1 through 6" "$graph_category_doc" ||
+    ! grep -Fqi "clarity 1 through 8" "$graph_category_doc"; then
+    printf '%s\n' "Maintained guidance must document graph category ranges: $graph_category_doc" >&2
+    exit 1
+  fi
+done
 
 load_marker='rows = load_model_rows("output.csv")'
 rpy_marker='    import rpy2'

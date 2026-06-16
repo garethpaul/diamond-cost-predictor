@@ -1,6 +1,6 @@
 ---
 title: Graph Category Range Validation
-status: in_progress
+status: completed
 date: 2026-06-16
 ---
 
@@ -54,3 +54,16 @@ out-of-domain category.
   coefficients, graph rendering, or R/rpy2 integration.
 - Do not claim live model fitting, generated PDF review, or prediction accuracy
   validation on this host.
+
+## Verification Completed
+
+- The focused model/graph tests passed with all 13 test methods; the complete
+  dependency-free suite passed 55 tests plus Python and shell syntax checks.
+- A finalized isolated tracked-file mirror passed repository-root validation;
+  external-directory make check passed before the real plan was completed.
+- Six isolated hostile mutations were rejected for the color and clarity upper
+  bounds, missing boundary tests, erased guidance, and reopened plan status.
+- Exact diff, generated-artifact, whitespace, file-mode, and added-line
+  credential-pattern audits passed before the canonical final gates.
+- R/rpy2 model execution, prediction PDF generation, live PriceScope access,
+  provenance review, and model accuracy validation were not exercised.

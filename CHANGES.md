@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-06-16
+
+- Rejected graph predictions outside color 1 through 6 and clarity 1 through 8
+  before model input or R execution.
+
 ## 2026-06-15
 
 - Validated graph prediction CLI values before model input and R execution,

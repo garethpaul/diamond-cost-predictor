@@ -4,6 +4,22 @@ import sys
 from model_input import load_model_rows
 
 
+COLOR_RANGE = (1, 6)
+CLARITY_RANGE = (1, 8)
+
+
+def validate_category(value, field_name, allowed_range):
+    minimum, maximum = allowed_range
+    if value < minimum or value > maximum:
+        raise ValueError(
+            'prediction {0} must be between {1} and {2}'.format(
+                field_name, minimum, maximum
+            )
+        )
+
+    return value
+
+
 def parse_prediction_args(argv):
     if len(argv) == 1:
         return None
@@ -20,10 +36,8 @@ def parse_prediction_args(argv):
 
     if not math.isfinite(carat) or carat <= 0:
         raise ValueError('prediction carat must be finite and positive')
-    if color <= 0:
-        raise ValueError('prediction color must be a positive integer')
-    if clarity <= 0:
-        raise ValueError('prediction clarity must be a positive integer')
+    color = validate_category(color, 'color', COLOR_RANGE)
+    clarity = validate_category(clarity, 'clarity', CLARITY_RANGE)
     if not math.isfinite(price) or price <= 0:
         raise ValueError('prediction price must be finite and positive')
 
