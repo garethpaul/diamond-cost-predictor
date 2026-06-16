@@ -26,6 +26,7 @@ PAGINATION_BOUNDARY_PLAN="$ROOT_DIR/docs/plans/2026-06-15-001-fix-pagination-bou
 NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-result-total.md"
 GRAPH_CLI_PLAN="$ROOT_DIR/docs/plans/2026-06-15-graph-cli-validation.md"
 GRAPH_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-graph-category-range-validation.md"
+MODEL_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-model-category-range-validation.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -81,11 +82,17 @@ for path in \
   "docs/plans/2026-06-15-scraper-nonnegative-result-total.md" \
   "docs/plans/2026-06-15-graph-cli-validation.md" \
   "docs/plans/2026-06-16-graph-category-range-validation.md" \
+  "docs/plans/2026-06-16-model-category-range-validation.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
 
 if ! grep -Fq "EXPECTED_FIELD_COUNT = 10" "$MODEL_INPUT" ||
+  ! grep -Fq "COLOR_RANGE = (1, 6)" "$MODEL_INPUT" ||
+  ! grep -Fq "CLARITY_RANGE = (1, 8)" "$MODEL_INPUT" ||
+  ! grep -Fq "def bounded_positive_int(value, field_name, allowed_range):" "$MODEL_INPUT" ||
+  ! grep -Fq "bounded_positive_int(fields[3], 'color', COLOR_RANGE)" "$MODEL_INPUT" ||
+  ! grep -Fq "bounded_positive_int(fields[4], 'clarity', CLARITY_RANGE)" "$MODEL_INPUT" ||
   ! grep -Fq "len(fields) != EXPECTED_FIELD_COUNT" "$MODEL_INPUT" ||
   ! grep -Fq "math.isfinite(number)" "$MODEL_INPUT" ||
   ! grep -Fq "number <= 0" "$MODEL_INPUT" ||
@@ -101,11 +108,14 @@ for model_test in \
   "test_graph_prediction_args_reject_invalid_numeric_values" \
   "test_graph_rejects_invalid_prediction_args_before_input_or_rpy2" \
   "test_parse_model_row_returns_typed_model_fields" \
+  "test_model_rows_accept_category_boundaries" \
+  "test_rejects_out_of_range_model_categories" \
   "test_rejects_truncated_and_extra_rows" \
   "test_rejects_non_finite_carat" \
   "test_rejects_non_positive_model_values" \
   "test_rejects_non_integer_model_categories" \
   "test_load_model_rows_reports_path_and_line" \
+  "test_load_model_rows_reports_out_of_range_category_line" \
   "test_load_model_rows_rejects_blank_rows" \
   "test_load_model_rows_rejects_empty_file" \
   "test_graph_rejects_invalid_input_before_rpy2_import"; do
@@ -117,8 +127,7 @@ done
 
 for graph_cli_contract in \
   "def parse_prediction_args(argv):" \
-  "COLOR_RANGE = (1, 6)" \
-  "CLARITY_RANGE = (1, 8)" \
+  "from model_input import CLARITY_RANGE, COLOR_RANGE, load_model_rows" \
   "def validate_category(value, field_name, allowed_range):" \
   "if len(argv) != 5:" \
   "math.isfinite(carat)" \
@@ -128,6 +137,21 @@ for graph_cli_contract in \
   "prediction_args = parse_prediction_args(argv)"; do
   if ! grep -Fq "$graph_cli_contract" "$GRAPH"; then
     printf '%s\n' "graph.py must retain CLI validation contract: $graph_cli_contract" >&2
+    exit 1
+  fi
+done
+
+if [ "$(grep -c '^status: completed$' "$MODEL_CATEGORY_RANGE_PLAN")" -ne 1 ]; then
+  printf '%s\n' "Model category range plan must record completed status exactly once." >&2
+  exit 1
+fi
+for model_category_evidence in \
+  'focused model/graph tests passed' \
+  'external-directory make check passed' \
+  'isolated hostile mutations were rejected' \
+  'Exact diff'; do
+  if ! grep -Fq "$model_category_evidence" "$MODEL_CATEGORY_RANGE_PLAN"; then
+    printf '%s\n' "Model category range plan must preserve completed evidence: $model_category_evidence" >&2
     exit 1
   fi
 done
@@ -181,6 +205,15 @@ for graph_category_doc in "$README" "$VISION" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR
   if ! grep -Fqi "color 1 through 6" "$graph_category_doc" ||
     ! grep -Fqi "clarity 1 through 8" "$graph_category_doc"; then
     printf '%s\n' "Maintained guidance must document graph category ranges: $graph_category_doc" >&2
+    exit 1
+  fi
+done
+
+for model_category_doc in "$README" "$VISION" "$ROOT_DIR/SECURITY.md" "$ROOT_DIR/AGENTS.md" "$ROOT_DIR/CHANGES.md"; do
+  if ! grep -Fqi "training rows" "$model_category_doc" ||
+    ! grep -Fqi "color 1 through 6" "$model_category_doc" ||
+    ! grep -Fqi "clarity 1 through 8" "$model_category_doc"; then
+    printf '%s\n' "Maintained guidance must document model-row category ranges: $model_category_doc" >&2
     exit 1
   fi
 done

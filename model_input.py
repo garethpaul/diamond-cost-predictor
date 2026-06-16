@@ -3,6 +3,8 @@ from collections import namedtuple
 
 
 EXPECTED_FIELD_COUNT = 10
+COLOR_RANGE = (1, 6)
+CLARITY_RANGE = (1, 8)
 ModelRow = namedtuple('ModelRow', 'carat color clarity sym pol price')
 
 
@@ -26,6 +28,18 @@ def positive_int(value, field_name):
     return number
 
 
+def bounded_positive_int(value, field_name, allowed_range):
+    number = positive_int(value, field_name)
+    minimum, maximum = allowed_range
+    if number < minimum or number > maximum:
+        raise ValueError(
+            '{0} must be between {1} and {2}'.format(
+                field_name, minimum, maximum
+            )
+        )
+    return number
+
+
 def parse_model_row(line):
     fields = line.rstrip('\r\n').split(',')
     if len(fields) != EXPECTED_FIELD_COUNT:
@@ -37,8 +51,8 @@ def parse_model_row(line):
 
     return ModelRow(
         carat=positive_float(fields[2], 'carat'),
-        color=positive_int(fields[3], 'color'),
-        clarity=positive_int(fields[4], 'clarity'),
+        color=bounded_positive_int(fields[3], 'color', COLOR_RANGE),
+        clarity=bounded_positive_int(fields[4], 'clarity', CLARITY_RANGE),
         sym=positive_int(fields[7], 'symmetry'),
         pol=positive_int(fields[8], 'polish'),
         price=positive_int(fields[9], 'price'),

@@ -54,6 +54,7 @@
   fully written and synced same-directory staged file.
 - `output.csv` rows must preserve the producer's exact ten-field shape and pass
   finite-positive model validation before `graph.py` loads rpy2.
+- Training rows must stay within color 1 through 6 and clarity 1 through 8.
 - `graph.py` must validate optional prediction arguments before model input or rpy2.
 - `graph.py` predictions must stay within color 1 through 6 and
   clarity 1 through 8, matching the committed model encodings.

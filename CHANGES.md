@@ -2,6 +2,8 @@
 
 ## 2026-06-16
 
+- Rejected training rows outside color 1 through 6 and clarity 1 through 8
+  before model input can reach R.
 - Rejected graph predictions outside color 1 through 6 and clarity 1 through 8
   before model input or R execution.
 

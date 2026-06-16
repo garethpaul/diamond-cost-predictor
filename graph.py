@@ -1,11 +1,7 @@
 import math
 import sys
 
-from model_input import load_model_rows
-
-
-COLOR_RANGE = (1, 6)
-CLARITY_RANGE = (1, 8)
+from model_input import CLARITY_RANGE, COLOR_RANGE, load_model_rows
 
 
 def validate_category(value, field_name, allowed_range):

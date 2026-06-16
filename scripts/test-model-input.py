@@ -98,6 +98,28 @@ class ModelInputTests(unittest.TestCase):
             ),
         )
 
+    def test_model_rows_accept_category_boundaries(self):
+        for color, clarity in ((1, 1), (6, 8)):
+            with self.subTest(color=color, clarity=clarity):
+                fields = VALID_ROW.rstrip().split(',')
+                fields[3] = str(color)
+                fields[4] = str(clarity)
+
+                row = MODEL_INPUT.parse_model_row(','.join(fields))
+
+                self.assertEqual((row.color, row.clarity), (color, clarity))
+
+    def test_rejects_out_of_range_model_categories(self):
+        for index, value, message in (
+            (3, '7', 'color must be between 1 and 6'),
+            (4, '9', 'clarity must be between 1 and 8'),
+        ):
+            with self.subTest(index=index, value=value):
+                fields = VALID_ROW.rstrip().split(',')
+                fields[index] = value
+                with self.assertRaisesRegex(ValueError, message):
+                    MODEL_INPUT.parse_model_row(','.join(fields))
+
     def test_rejects_truncated_and_extra_rows(self):
         for row in ('1,42,0.75,4', VALID_ROW.rstrip() + ',extra'):
             with self.subTest(row=row):
@@ -137,6 +159,18 @@ class ModelInputTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 ValueError,
                 r'output\.csv:2: expected 10 comma-separated fields, got 3',
+            ):
+                MODEL_INPUT.load_model_rows(path)
+
+    def test_load_model_rows_reports_out_of_range_category_line(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = pathlib.Path(directory) / 'output.csv'
+            invalid_row = VALID_ROW.replace(',4,5,', ',7,5,')
+            path.write_text(VALID_ROW + invalid_row, encoding='utf-8')
+
+            with self.assertRaisesRegex(
+                ValueError,
+                r'output\.csv:2: color must be between 1 and 6',
             ):
                 MODEL_INPUT.load_model_rows(path)
 

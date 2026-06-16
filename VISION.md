@@ -32,6 +32,8 @@ Priority:
 - Validate graph prediction arguments before model execution
 - Keep graph prediction categories within color 1 through 6 and
   clarity 1 through 8, matching the committed model inputs
+- Keep training rows within color 1 through 6 and clarity 1 through 8 before
+  model execution
 - Reject malformed UTF-8 scraper pages instead of repairing remote records
 - Validate final scraper response origins before reading remote bodies
 - Publish scraper output atomically only after durable same-directory staging

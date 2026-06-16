@@ -74,6 +74,8 @@ document the exact Python/R environment used when updating that path.
 Before loading rpy2, `graph.py` validates every output.csv row through the
 dependency-free model loader. Truncated, extra-field, blank, non-finite,
 non-positive, and non-integer model rows fail with path and line context.
+Training rows also require color 1 through 6 and clarity 1 through 8, matching
+the model's supported category encodings.
 Optional graph prediction arguments require exactly four finite-positive values,
 with positive integer color and clarity categories, before model input or R work.
 Those categories must remain within color 1 through 6 and clarity 1 through 8,
