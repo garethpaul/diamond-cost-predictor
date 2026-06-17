@@ -57,5 +57,11 @@ share one explicit encoding contract.
   bounded-parser ownership, and completed-plan status and evidence.
 - Exact diff, generated-artifact, whitespace, file-mode, and added-line
   credential-pattern audits passed.
+- The implementation was committed as
+  `20729749d2dda535db8285c7b2f38a5af658a3b2`.
+- Canonical hosted verification passed on that exact implementation head:
+  push run `27645252397` and pull-request run `27645266318` each completed
+  successfully across Python 3.10, 3.12, and 3.14. PR #20 remained open,
+  clean, and mergeable, and the branch had no open code-scanning alerts.
 - R/rpy2 model execution, prediction PDF generation, live PriceScope access,
   provenance review, and prediction accuracy validation were not exercised.

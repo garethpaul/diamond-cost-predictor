@@ -149,7 +149,10 @@ for model_category_evidence in \
   'focused model/graph tests passed' \
   'external-directory make check passed' \
   'isolated hostile mutations were rejected' \
-  'Exact diff'; do
+  'Exact diff' \
+  '20729749d2dda535db8285c7b2f38a5af658a3b2' \
+  'push run `27645252397`' \
+  'pull-request run `27645266318`'; do
   if ! grep -Fq "$model_category_evidence" "$MODEL_CATEGORY_RANGE_PLAN"; then
     printf '%s\n' "Model category range plan must preserve completed evidence: $model_category_evidence" >&2
     exit 1
