@@ -16,6 +16,16 @@ def validate_category(value, field_name, allowed_range):
     return value
 
 
+def validate_prediction_price(value):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        raise ValueError('predicted price must be finite and non-negative')
+    if not math.isfinite(number) or number < 0:
+        raise ValueError('predicted price must be finite and non-negative')
+    return number
+
+
 def parse_prediction_args(argv):
     if len(argv) == 1:
         return None
@@ -107,7 +117,9 @@ def main(argv):
 
     if prediction_args is not None:
         ycar, ycol, ycla, ypri = prediction_args
-        ypred = coef[0] + coef[1] * ycar + coef[2] * ycol + coef[3] * ycla
+        ypred = validate_prediction_price(
+            coef[0] + coef[1] * ycar + coef[2] * ycol + coef[3] * ycla
+        )
         sdiam = (
             "Your Diamond: " + str(ycar) + " Carats, " + str(ycol) +
             " Color, " + str(ycla) + " Clarity, $" + str(ypri)

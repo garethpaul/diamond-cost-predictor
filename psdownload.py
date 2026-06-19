@@ -199,8 +199,9 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
 def write_diamonds(path, diamonds):
     validate_output_path(path)
     destination = os.path.abspath(os.fspath(path))
-    output_directory = os.path.dirname(destination) or "."
     output_name = os.path.basename(destination)
+    output_directory = os.path.realpath(os.path.dirname(destination) or ".")
+    destination = os.path.join(output_directory, output_name)
     descriptor = None
     temporary_path = None
 

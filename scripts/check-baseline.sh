@@ -106,6 +106,8 @@ for model_test in \
   "test_graph_prediction_args_accept_none_or_four_valid_values" \
   "test_graph_prediction_args_reject_partial_and_extra_values" \
   "test_graph_prediction_args_reject_invalid_numeric_values" \
+  "test_graph_prediction_output_rejects_nonfinite_and_negative_values" \
+  "test_graph_prediction_output_accepts_zero_boundary" \
   "test_graph_rejects_invalid_prediction_args_before_input_or_rpy2" \
   "test_parse_model_row_returns_typed_model_fields" \
   "test_model_rows_accept_category_boundaries" \
@@ -134,7 +136,10 @@ for graph_cli_contract in \
   "math.isfinite(price)" \
   "validate_category(color, 'color', COLOR_RANGE)" \
   "validate_category(clarity, 'clarity', CLARITY_RANGE)" \
-  "prediction_args = parse_prediction_args(argv)"; do
+  "def validate_prediction_price(value):" \
+  "not math.isfinite(number) or number < 0" \
+  "prediction_args = parse_prediction_args(argv)" \
+  "ypred = validate_prediction_price("; do
   if ! grep -Fq "$graph_cli_contract" "$GRAPH"; then
     printf '%s\n' "graph.py must retain CLI validation contract: $graph_cli_contract" >&2
     exit 1

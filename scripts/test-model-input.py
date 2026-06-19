@@ -61,6 +61,15 @@ class ModelInputTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     GRAPH.parse_prediction_args(argv)
 
+    def test_graph_prediction_output_rejects_nonfinite_and_negative_values(self):
+        for predicted_price in (float('nan'), float('inf'), -1):
+            with self.subTest(predicted_price=predicted_price):
+                with self.assertRaisesRegex(ValueError, 'predicted price must be finite and non-negative'):
+                    GRAPH.validate_prediction_price(predicted_price)
+
+    def test_graph_prediction_output_accepts_zero_boundary(self):
+        self.assertEqual(GRAPH.validate_prediction_price(0), 0)
+
     def test_graph_rejects_invalid_prediction_args_before_input_or_rpy2(self):
         cases = (
             (['0.75', '7', '5', '1250'], 'prediction color must be between 1 and 6'),
