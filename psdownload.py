@@ -3,6 +3,7 @@ import argparse
 import math
 import os
 import socket
+import tempfile
 from urllib.error import URLError
 from urllib.parse import urlencode, urlparse
 from urllib.request import urlopen
@@ -14,6 +15,7 @@ DEFAULT_STEP = 0.005
 DEFAULT_TIMEOUT = 15
 MAX_CARAT_SPAN = 0.5
 MAX_RESPONSE_BYTES = 2 * 1024 * 1024
+RESULTS_PER_PAGE = 25
 
 
 def drange(start, stop, step):
@@ -86,14 +88,42 @@ def build_url(shape, lower_size, upper_size, page, endpoint=None):
     return pricescope_ajax_url(endpoint) + "?" + urlencode(query)
 
 
+def response_origin(url):
+    parsed = urlparse(url)
+    if parsed.scheme.lower() != "https" or not parsed.hostname:
+        raise ValueError("response URL must use HTTPS with a host")
+    if parsed.username or parsed.password:
+        raise ValueError("response URL must not include credentials")
+    try:
+        port = parsed.port or 443
+    except ValueError:
+        raise ValueError("response URL port is invalid")
+    return parsed.hostname.lower(), port
+
+
+def validate_response_origin(request_url, response_url):
+    if response_origin(request_url) != response_origin(response_url):
+        raise ValueError("response URL changed origin")
+
+
 def read_lines(url, timeout):
     try:
         with urlopen(url, timeout=timeout) as response:
+            try:
+                validate_response_origin(url, response.geturl())
+            except (AttributeError, TypeError, ValueError):
+                print("   Failed to download page: response origin was not trusted")
+                return []
             payload = response.read(MAX_RESPONSE_BYTES + 1)
             if len(payload) > MAX_RESPONSE_BYTES:
                 print("   Failed to download page: response exceeded byte limit")
                 return []
-            return payload.decode("utf-8", "replace").splitlines()
+            try:
+                decoded = payload.decode("utf-8")
+            except UnicodeDecodeError:
+                print("   Failed to download page: response was not valid UTF-8")
+                return []
+            return decoded.splitlines()
     except (TimeoutError, socket.timeout, URLError) as exc:
         print("   Failed to download page: {0}".format(exc))
         return []
@@ -101,9 +131,10 @@ def read_lines(url, timeout):
 
 def parse_total(line, fallback):
     try:
-        return int(line.split("have ")[1].split("<b>")[0].strip())
+        total = int(line.split("have ")[1].split("<b>")[0].strip())
     except (IndexError, ValueError):
         return fallback
+    return total if total >= 0 else fallback
 
 
 def validate_scrape_args(min_carat, max_carat, timeout):
@@ -143,7 +174,7 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
             print("Downloading diamonds carat sized {0} to {1}".format(lower_size, upper_size))
 
             for page in range(1, 21):
-                if 25 * (page - 1) > total_for_query:
+                if RESULTS_PER_PAGE * (page - 1) >= total_for_query:
                     print("   Skipping page {0}/20".format(page))
                     continue
 
@@ -167,9 +198,37 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
 
 def write_diamonds(path, diamonds):
     validate_output_path(path)
-    with open(path, "w", encoding="utf-8") as diamond_file:
-        for diamond in diamonds:
-            diamond_file.write(str(diamond) + "\n")
+    destination = os.path.abspath(os.fspath(path))
+    output_name = os.path.basename(destination)
+    output_directory = os.path.realpath(os.path.dirname(destination) or ".")
+    destination = os.path.join(output_directory, output_name)
+    descriptor = None
+    temporary_path = None
+
+    try:
+        descriptor, temporary_path = tempfile.mkstemp(
+            prefix=".{0}.".format(output_name),
+            suffix=".tmp",
+            dir=output_directory,
+            text=True,
+        )
+        with os.fdopen(descriptor, "w", encoding="utf-8") as diamond_file:
+            descriptor = None
+            for diamond in diamonds:
+                diamond_file.write(str(diamond) + "\n")
+            diamond_file.flush()
+            os.fsync(diamond_file.fileno())
+
+        os.replace(temporary_path, destination)
+        temporary_path = None
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+        if temporary_path is not None:
+            try:
+                os.unlink(temporary_path)
+            except FileNotFoundError:
+                pass
 
 
 def parse_args(argv=None):

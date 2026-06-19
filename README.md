@@ -65,9 +65,21 @@ plus ranges where `max_carat` is not greater than `min_carat`, before making
 requests. Each invocation is limited to a `0.5` carat span, and range iteration
 fails if floating-point addition cannot advance the next bucket. The CLI also
 rejects blank output paths before any download loop is started.
+Completed downloads are staged beside the requested output, durably flushed,
+and published with atomic replacement, so a serialization or publication
+failure preserves an existing dataset instead of truncating it.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
+Before loading rpy2, `graph.py` validates every output.csv row through the
+dependency-free model loader. Truncated, extra-field, blank, non-finite,
+non-positive, and non-integer model rows fail with path and line context.
+Training rows also require color 1 through 6 and clarity 1 through 8, matching
+the model's supported category encodings.
+Optional graph prediction arguments require exactly four finite-positive values,
+with positive integer color and clarity categories, before model input or R work.
+Those categories must remain within color 1 through 6 and clarity 1 through 8,
+matching the committed model input encodings.
 
 ## Testing and Verification
 
@@ -83,8 +95,10 @@ Python compile build target from the
 repository root. The guard compiles the Python scripts, runs parser and scraper
 helper regression tests, verifies that scraped diamond records are parsed with
 `ast.literal_eval` instead of `eval`, and checks that scraper downloads use
-HTTPS with a timeout. Each downloaded page is capped at 2 MiB before decoding
-to prevent an oversized remote response from exhausting process memory. Parser
+HTTPS with a timeout. The final response origin must remain HTTPS on the same
+host and normalized port before the body is read. Each downloaded page is capped at 2 MiB and decoded as
+strict UTF-8, preventing oversized or malformed remote responses from entering
+the scraper as repaired text. Parser
 tests also reject boolean literals and non-finite or non-positive numeric model
 inputs, so generated CSV rows contain finite positive values. Vendor IDs and
 prices must be exact positive integers, so fractional float literals cannot be
@@ -93,9 +107,15 @@ tests reject blank output paths before network work starts, and the write
 helper also validates output paths before opening files.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 for pushes,
 pull requests, and manual dispatches on Ubuntu 24.04. The workflow uses
-commit-pinned actions, read-only repository access, and a bounded runtime.
+commit-pinned actions, read-only repository access, a credential-free
+checkout, and a bounded runtime.
 
 When the required SDK or runtime is unavailable, use static checks and source review first, then verify on a machine that has the matching platform toolchain.
+
+Use [`MODEL_VERIFICATION.md`](MODEL_VERIFICATION.md) to record exact-head live
+source, R/rpy2, model-quality, and generated-artifact evidence. Keep unavailable
+data-science scenarios as explicit unexecuted rows rather than treating parser,
+fixture, compile, or static checks as model execution.
 
 ## Configuration and Secrets
 
@@ -108,14 +128,24 @@ When the required SDK or runtime is unavailable, use static checks and source re
 - Numeric parser validation rejects non-finite or non-positive model inputs,
   boolean literals, and fractional vendor IDs or prices before they are written
   to generated CSV rows.
+- Generated model input retains an exact ten-field row contract and is validated
+  before R/rpy2 loading.
 - `psdownload.py` defaults to HTTPS, rejects non-HTTPS endpoint overrides, and
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
+- `psdownload.py` rejects redirects whose final response origin downgrades from
+  HTTPS or changes host or port before reading the response body.
 - `psdownload.py` rejects page responses larger than 2 MiB before decoding.
+- `psdownload.py` rejects malformed UTF-8 page responses without logging their
+  bytes or inserting replacement characters into scraped records.
 - `psdownload.py` validates carat ranges and timeout values before scraping.
 - `psdownload.py` bounds each invocation to a `0.5` carat span and rejects
   non-advancing floating-point range steps.
+- `psdownload.py` stops pagination at exact 25-row result boundaries while
+  retaining positive partial pages and the bounded malformed-count fallback.
+- `psdownload.py` rejects negative reported result totals while preserving zero
+  results and the bounded malformed-count fallback.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
 - The write helper also validates output paths before opening files.

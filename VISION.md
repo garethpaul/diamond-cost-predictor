@@ -27,13 +27,27 @@ Priority:
 - Validate scraper endpoint overrides before downloading data
 - Validate scraper output paths before downloading data and direct file writes
 - Bound each remote scraper page before decoding it into memory
+- Avoid redundant scraper page requests at exact result boundaries
+- Reject negative upstream result totals without changing zero-result behavior
+- Validate graph prediction arguments before model execution
+- Keep graph prediction categories within color 1 through 6 and
+  clarity 1 through 8, matching the committed model inputs
+- Keep training rows within color 1 through 6 and clarity 1 through 8 before
+  model execution
+- Reject malformed UTF-8 scraper pages instead of repairing remote records
+- Validate final scraper response origins before reading remote bodies
+- Publish scraper output atomically only after durable same-directory staging
 - Reject boolean literals in numeric diamond fields before model generation
 - Require vendor IDs and prices to be exact positive integers
+- Validate generated model rows before R execution
 - Keep GitHub Actions aligned with the local Python `make check` baseline
+  without persisting the checkout credential
 - Keep the model formula and graph generation easy to inspect
 
 Next priorities:
 
+- Execute the diamond model verification matrix against an authorized source
+  and a pinned R/rpy2 environment
 - Add README setup, data-source, and reproduction instructions
 - Port scripts to a supported Python version in a dedicated pass
 - Keep structured diamond record parsing covered by regression tests

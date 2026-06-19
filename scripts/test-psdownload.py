@@ -5,6 +5,7 @@ import io
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 from urllib.error import URLError
 from urllib.parse import parse_qs, urlparse
 
@@ -28,6 +29,31 @@ class PriceScopeDownloadTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()):
             with self.assertRaises(SystemExit):
                 psdownload.parse_args(args)
+
+    def scrape_for_line(self, line):
+        requested_pages = []
+
+        def read_page(url, timeout):
+            del timeout
+            page = int(parse_qs(urlparse(url).query)['page'][0])
+            requested_pages.append(page)
+            return [line]
+
+        with mock.patch.object(psdownload, 'DIAMOND_TYPES', ['BR']):
+            with mock.patch.object(psdownload, 'read_lines', read_page):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    diamonds, found_total = psdownload.collect_diamonds(0.25, 0.255, 1)
+
+        return requested_pages, diamonds, found_total
+
+    def requested_pages_for_line(self, line):
+        requested_pages, _, _ = self.scrape_for_line(line)
+        return requested_pages
+
+    def requested_pages_for_total(self, total):
+        return self.requested_pages_for_line(
+            'We have {0} <b>diamonds</b>'.format(total),
+        )
 
     def test_build_url_encodes_query_arguments(self):
         url = psdownload.build_url('BR', 0.25, 0.255, 3)
@@ -70,6 +96,10 @@ class PriceScopeDownloadTests(unittest.TestCase):
     def test_parse_total_falls_back_on_unexpected_markup(self):
         self.assertEqual(psdownload.parse_total('We have 42 <b>diamonds</b>', 500), 42)
         self.assertEqual(psdownload.parse_total('No count here', 17), 17)
+
+    def test_parse_total_accepts_zero_and_rejects_negative_counts(self):
+        self.assertEqual(psdownload.parse_total('We have 0 <b>diamonds</b>', 500), 0)
+        self.assertEqual(psdownload.parse_total('We have -1 <b>diamonds</b>', 500), 500)
 
     def test_parse_args_exposes_timeout_and_output_defaults(self):
         args = psdownload.parse_args(['0.25', '0.30'])
@@ -116,6 +146,28 @@ class PriceScopeDownloadTests(unittest.TestCase):
         finally:
             psdownload.read_lines = original_read_lines
 
+    def test_collect_diamonds_stops_at_exact_page_boundaries(self):
+        self.assertEqual(self.requested_pages_for_total(25), [1])
+        self.assertEqual(self.requested_pages_for_total(50), [1, 2])
+
+    def test_collect_diamonds_requests_a_positive_partial_page(self):
+        self.assertEqual(self.requested_pages_for_total(26), [1, 2])
+
+    def test_collect_diamonds_keeps_bounded_fallback_for_malformed_total(self):
+        self.assertEqual(
+            self.requested_pages_for_line('No count here'),
+            list(range(1, 21)),
+        )
+
+    def test_collect_diamonds_keeps_bounded_fallback_for_negative_total(self):
+        requested_pages, diamonds, found_total = self.scrape_for_line(
+            'We have -1 <b>diamonds</b>',
+        )
+
+        self.assertEqual(requested_pages, list(range(1, 21)))
+        self.assertEqual(diamonds, [])
+        self.assertEqual(found_total, 500)
+
     def test_drange_rejects_invalid_or_non_advancing_steps(self):
         with self.assertRaises(ValueError):
             list(psdownload.drange(0.25, 0.30, 0))
@@ -124,12 +176,50 @@ class PriceScopeDownloadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             list(psdownload.drange(1e20, 1e20 + 1e6, psdownload.DEFAULT_STEP))
 
-    def test_write_diamonds_writes_one_record_per_line(self):
+    def test_write_diamonds_atomically_replaces_output_in_destination_directory(self):
         with tempfile.TemporaryDirectory() as directory:
             output = pathlib.Path(directory) / 'diamonds.txt'
-            psdownload.write_diamonds(output, ['first', 'second'])
+            output.write_text('previous\n', encoding='utf-8')
+            staged_directories = []
+            original_mkstemp = psdownload.tempfile.mkstemp
+
+            def recording_mkstemp(*args, **kwargs):
+                staged_directories.append(pathlib.Path(kwargs['dir']))
+                return original_mkstemp(*args, **kwargs)
+
+            with mock.patch.object(psdownload.tempfile, 'mkstemp', recording_mkstemp):
+                psdownload.write_diamonds(output, ['first', 'second'])
 
             self.assertEqual(output.read_text(encoding='utf-8'), 'first\nsecond\n')
+            self.assertEqual(staged_directories, [output.parent.resolve()])
+            self.assertEqual(list(output.parent.iterdir()), [output])
+
+    def test_write_diamonds_preserves_output_when_record_conversion_fails(self):
+        class BrokenRecord:
+            def __str__(self):
+                raise RuntimeError('cannot serialize')
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            output.write_text('previous\n', encoding='utf-8')
+
+            with self.assertRaisesRegex(RuntimeError, 'cannot serialize'):
+                psdownload.write_diamonds(output, ['first', BrokenRecord()])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
+            self.assertEqual(list(output.parent.iterdir()), [output])
+
+    def test_write_diamonds_preserves_output_when_atomic_replace_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            output.write_text('previous\n', encoding='utf-8')
+
+            with mock.patch.object(psdownload.os, 'replace', side_effect=OSError('replace failed')):
+                with self.assertRaisesRegex(OSError, 'replace failed'):
+                    psdownload.write_diamonds(output, ['replacement'])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
+            self.assertEqual(list(output.parent.iterdir()), [output])
 
     def test_write_diamonds_rejects_blank_output_path(self):
         with self.assertRaises(ValueError):
@@ -159,16 +249,48 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
             def read(self, limit):
                 self.limit = limit
-                return b'first\nsecond\n'
+                return 'first\ncaf\u00e9 \u6771\u4eac\n'.encode('utf-8')
+
+            def geturl(self):
+                return 'https://example.test/redirected?page=1'
 
         response = FakeResponse()
         psdownload.urlopen = lambda url, timeout: response
         try:
             self.assertEqual(
                 psdownload.read_lines('https://example.test/', 1),
-                ['first', 'second'],
+                ['first', 'caf\u00e9 \u6771\u4eac'],
             )
             self.assertEqual(response.limit, psdownload.MAX_RESPONSE_BYTES + 1)
+        finally:
+            psdownload.urlopen = original_urlopen
+
+    def test_read_lines_rejects_malformed_utf8_response(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self, limit):
+                return b'valid-prefix\xffprivate-tail'
+
+            def geturl(self):
+                return 'https://example.test/'
+
+        psdownload.urlopen = lambda url, timeout: FakeResponse()
+        try:
+            output = io.StringIO()
+            with contextlib.redirect_stdout(output):
+                self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+            self.assertEqual(
+                output.getvalue(),
+                '   Failed to download page: response was not valid UTF-8\n',
+            )
+            self.assertNotIn('private-tail', output.getvalue())
         finally:
             psdownload.urlopen = original_urlopen
 
@@ -185,12 +307,69 @@ class PriceScopeDownloadTests(unittest.TestCase):
             def read(self, limit):
                 return b'x' * limit
 
+            def geturl(self):
+                return 'https://example.test/'
+
         psdownload.urlopen = lambda url, timeout: FakeResponse()
         try:
             with contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
         finally:
             psdownload.urlopen = original_urlopen
+
+    def test_read_lines_rejects_untrusted_response_origins_before_body_read(self):
+        original_urlopen = psdownload.urlopen
+
+        class FakeResponse:
+            def __init__(self, final_url):
+                self.final_url = final_url
+                self.read_calls = 0
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def geturl(self):
+                return self.final_url
+
+            def read(self, limit):
+                self.read_calls += 1
+                return b'private response body'
+
+        hostile_urls = [
+            'http://example.test/redirected',
+            'https://other.test/redirected',
+            'https://example.test:444/redirected',
+            'https://user:secret@example.test/redirected',
+            'https://example.test:invalid/redirected',
+        ]
+        try:
+            for final_url in hostile_urls:
+                response = FakeResponse(final_url)
+                psdownload.urlopen = lambda url, timeout, response=response: response
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    self.assertEqual(psdownload.read_lines('https://example.test/source', 1), [])
+                self.assertEqual(response.read_calls, 0)
+                self.assertEqual(
+                    output.getvalue(),
+                    '   Failed to download page: response origin was not trusted\n',
+                )
+                self.assertNotIn(final_url, output.getvalue())
+        finally:
+            psdownload.urlopen = original_urlopen
+
+    def test_response_origin_normalizes_default_https_port(self):
+        self.assertEqual(
+            psdownload.response_origin('https://EXAMPLE.test:443/path'),
+            ('example.test', 443),
+        )
+        psdownload.validate_response_origin(
+            'https://example.test/source',
+            'https://example.test:443/redirected?next=1',
+        )
 
 
 if __name__ == '__main__':

@@ -38,12 +38,24 @@ For web services, APIs, sockets, or scraping workflows, prioritize reports invol
 For this scraper sample, keep endpoint overrides constrained to HTTPS hosts
 without embedded credentials, query strings, or fragments. Output paths should
 be validated before downloads and direct result writes. Remote page bodies
-must remain size-limited before decoding so an oversized response cannot consume
-unbounded process memory.
+must remain size-limited and use strict UTF-8 decoding so oversized or malformed
+responses cannot consume unbounded memory or silently alter scraped records.
+The final scraper response must remain HTTPS and same-origin before any body is
+read, preventing downgrade or cross-origin redirect ingestion.
+Pagination must stop at exact reported result boundaries so the scraper does
+not issue redundant source requests that increase rate-limit exposure.
+Reported scraper result totals must never be negative; invalid counts retain
+the bounded fallback instead of truncating pagination or corrupting summaries.
+Graph prediction arguments must be validated before model input or R execution
+so malformed, non-finite, or zero-price values cannot reach prediction math.
+Predictions must also stay within color 1 through 6 and clarity 1 through 8 so
+unsupported categories cannot produce precise-looking extrapolated prices.
+Training rows must enforce the same color 1 through 6 and clarity 1 through 8
+domains before malformed model input can reach R.
 GitHub Actions runs `make check` on Python 3.10, 3.12, and 3.14 with
-commit-pinned actions, read-only repository access, and bounded execution so
-parser, scraper argument, endpoint, and output-path guardrails stay enforced
-before merge.
+commit-pinned actions, read-only repository access, a credential-free checkout,
+and bounded execution so parser, scraper argument, endpoint, and output-path
+guardrails stay enforced before merge.
 
 ## Dependency and Supply Chain Security
 

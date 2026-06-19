@@ -1,7 +1,41 @@
 # Changelog
 
+## 2026-06-16
+
+- Rejected training rows outside color 1 through 6 and clarity 1 through 8
+  before model input can reach R.
+- Rejected graph predictions outside color 1 through 6 and clarity 1 through 8
+  before model input or R execution.
+
+## 2026-06-15
+
+- Validated graph prediction CLI values before model input and R execution,
+  including exact arity, finite-positive values, and positive integer categories.
+- Rejected negative PriceScope result totals while preserving zero-result
+  queries and bounded fallback pagination.
+- Stopped redundant PriceScope page requests at exact 25-row result boundaries
+  while preserving partial-page and malformed-count fallback behavior.
+
+## 2026-06-14
+
+- Added an exact-head model verification matrix with provenance, accuracy,
+  reproducibility, and artifact evidence fields kept explicitly unexecuted.
+
+## 2026-06-13
+
+- Validated generated model rows before loading rpy2, with exact field counts,
+  finite-positive values, and path/line diagnostics.
+- Validated final scraper response origins before body reads, rejecting HTTPS
+  downgrades and cross-origin redirects.
+- Published scraper output atomically after same-directory staging, flush, and
+  sync so failed writes preserve an existing dataset.
+- Rejected malformed UTF-8 scraper responses at page scope instead of
+  inserting replacement characters into downloaded diamond records.
+
 ## 2026-06-12
 
+- Stopped GitHub Actions checkout from persisting its credential and added an
+  exact contract for the sole workflow and checkout step.
 - Rejected fractional and non-finite float literals in vendor ID and price
   fields instead of truncating them or leaking conversion errors.
 - Added regression coverage for both integer fields and retained support for
