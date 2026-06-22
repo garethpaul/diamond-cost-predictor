@@ -1,10 +1,10 @@
 import math
 from collections import namedtuple
 
+from model_domain import CLARITY_RANGE, COLOR_RANGE
+
 
 EXPECTED_FIELD_COUNT = 10
-COLOR_RANGE = (1, 6)
-CLARITY_RANGE = (1, 8)
 ModelRow = namedtuple('ModelRow', 'carat color clarity sym pol price')
 
 
