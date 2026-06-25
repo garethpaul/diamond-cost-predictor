@@ -5,6 +5,8 @@ import math
 import sys
 from operator import itemgetter
 
+from model_domain import supports_model_categories
+
 
 SHAPES = {
     'BR': 1,
@@ -188,7 +190,7 @@ def format_record(record):
 def main(argv):
     input_path = argv[1] if len(argv) > 1 else 'diamonds.txt'
     for record in load_records(input_path):
-        if record['color'] > 8:
+        if not supports_model_categories(record['color'], record['clarity']):
             continue
         print(format_record(record))
 

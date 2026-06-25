@@ -32,6 +32,7 @@ MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
 TESTS="$ROOT_DIR/scripts/test-safe-parsing.py"
 SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
+MODEL_DOMAIN="$ROOT_DIR/model_domain.py"
 MODEL_INPUT="$ROOT_DIR/model_input.py"
 MODEL_INPUT_TESTS="$ROOT_DIR/scripts/test-model-input.py"
 GRAPH="$ROOT_DIR/graph.py"
@@ -52,6 +53,7 @@ for path in \
   "Makefile" \
   "csv.py" \
   "psdownload.py" \
+  "model_domain.py" \
   "model_input.py" \
   "graph.py" \
   "lm.py" \
@@ -87,9 +89,17 @@ for path in \
   require_file "$path"
 done
 
+if ! grep -Fq "COLOR_RANGE = (1, 6)" "$MODEL_DOMAIN" ||
+  ! grep -Fq "CLARITY_RANGE = (1, 8)" "$MODEL_DOMAIN" ||
+  ! grep -Fq "def supports_model_categories(color, clarity):" "$MODEL_DOMAIN" ||
+  ! grep -Fq "from model_domain import supports_model_categories" "$PARSER" ||
+  ! grep -Fq "if not supports_model_categories(record['color'], record['clarity']):" "$PARSER"; then
+  printf '%s\n' "Conversion and model loading must share one category domain." >&2
+  exit 1
+fi
+
 if ! grep -Fq "EXPECTED_FIELD_COUNT = 10" "$MODEL_INPUT" ||
-  ! grep -Fq "COLOR_RANGE = (1, 6)" "$MODEL_INPUT" ||
-  ! grep -Fq "CLARITY_RANGE = (1, 8)" "$MODEL_INPUT" ||
+  ! grep -Fq "from model_domain import CLARITY_RANGE, COLOR_RANGE" "$MODEL_INPUT" ||
   ! grep -Fq "def bounded_positive_int(value, field_name, allowed_range):" "$MODEL_INPUT" ||
   ! grep -Fq "bounded_positive_int(fields[3], 'color', COLOR_RANGE)" "$MODEL_INPUT" ||
   ! grep -Fq "bounded_positive_int(fields[4], 'clarity', CLARITY_RANGE)" "$MODEL_INPUT" ||
@@ -299,7 +309,7 @@ if ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW"; then
 fi
 
 if ! grep -Fq 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' "$MAKEFILE" ||
-  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 12 ]; then
+  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 13 ]; then
   printf '%s\n' "Make verification must resolve scripts and Python files from the repository root." >&2
   exit 1
 fi
@@ -1006,7 +1016,7 @@ for ignored in "diamonds.txt" "prediction.pdf"; do
   fi
 done
 
-python3 -m py_compile "$PARSER" "$TESTS" "$SCRAPER_TESTS" "$ROOT_DIR/psdownload.py" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
+python3 -m py_compile "$PARSER" "$TESTS" "$SCRAPER_TESTS" "$ROOT_DIR/psdownload.py" "$MODEL_DOMAIN" "$MODEL_INPUT" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
 python3 "$TESTS"
 python3 "$SCRAPER_TESTS"
 

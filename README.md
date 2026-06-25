@@ -50,6 +50,10 @@ Convert scraped `diamonds.txt` records to numeric CSV rows with:
 python3 csv.py diamonds.txt > output.csv
 ```
 
+Conversion shares the model's color 1 through 6 and clarity 1 through 8 domain.
+Source records outside that trained domain are skipped instead of emitting rows
+that the model loader cannot accept.
+
 Download a bounded PriceScope carat range with HTTPS and an explicit timeout:
 
 ```bash

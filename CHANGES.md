@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-25
+
+- Revalidated the shared converter and model-input category schema across the
+  full parser, scraper, model-input, compilation, and hosted Python matrix.
+
+## 2026-06-22
+
+- Shared one trained color and clarity domain between conversion and model input,
+  skipping source categories outside that domain before CSV rows are emitted.
+
 ## 2026-06-16
 
 - Rejected training rows outside color 1 through 6 and clarity 1 through 8

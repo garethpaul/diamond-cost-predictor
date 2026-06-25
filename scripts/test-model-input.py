@@ -7,11 +7,11 @@ import unittest
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-SPEC = importlib.util.spec_from_file_location('model_input', ROOT / 'model_input.py')
-MODEL_INPUT = importlib.util.module_from_spec(SPEC)
-SPEC.loader.exec_module(MODEL_INPUT)
 sys.path.insert(0, str(ROOT))
 try:
+    SPEC = importlib.util.spec_from_file_location('model_input', ROOT / 'model_input.py')
+    MODEL_INPUT = importlib.util.module_from_spec(SPEC)
+    SPEC.loader.exec_module(MODEL_INPUT)
     GRAPH_SPEC = importlib.util.spec_from_file_location('graph', ROOT / 'graph.py')
     GRAPH = importlib.util.module_from_spec(GRAPH_SPEC)
     GRAPH_SPEC.loader.exec_module(GRAPH)
