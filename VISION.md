@@ -37,6 +37,7 @@ Priority:
 - Reject malformed UTF-8 scraper pages instead of repairing remote records
 - Validate final scraper response origins before reading remote bodies
 - Publish scraper output atomically only after durable same-directory staging
+- Prevent incomplete scraper runs from replacing prior datasets
 - Reject boolean literals in numeric diamond fields before model generation
 - Require vendor IDs and prices to be exact positive integers
 - Validate generated model rows before R execution

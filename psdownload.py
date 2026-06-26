@@ -113,20 +113,20 @@ def read_lines(url, timeout):
                 validate_response_origin(url, response.geturl())
             except (AttributeError, TypeError, ValueError):
                 print("   Failed to download page: response origin was not trusted")
-                return []
+                return None
             payload = response.read(MAX_RESPONSE_BYTES + 1)
             if len(payload) > MAX_RESPONSE_BYTES:
                 print("   Failed to download page: response exceeded byte limit")
-                return []
+                return None
             try:
                 decoded = payload.decode("utf-8")
             except UnicodeDecodeError:
                 print("   Failed to download page: response was not valid UTF-8")
-                return []
+                return None
             return decoded.splitlines()
     except (TimeoutError, socket.timeout, URLError) as exc:
         print("   Failed to download page: {0}".format(exc))
-        return []
+        return None
 
 
 def parse_total(line, fallback):
@@ -180,6 +180,8 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
 
                 print("   Downloading page {0}/20".format(page))
                 lines = read_lines(build_url(diamond_type, lower_size, upper_size, page, endpoint), timeout)
+                if lines is None:
+                    raise RuntimeError("failed to download requested diamond page")
                 found_data_marker = False
 
                 for line in lines:
