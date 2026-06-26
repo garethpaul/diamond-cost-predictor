@@ -44,6 +44,7 @@ Priority:
 - Keep GitHub Actions aligned with the local Python `make check` baseline
   without persisting the checkout credential
 - Keep the model formula and graph generation easy to inspect
+- Scraper publication fsyncs the destination directory after atomic replacement
 - Publish model PDFs with same-directory atomic replacement only after a
   complete nonempty report is closed and durably flushed
 

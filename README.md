@@ -162,6 +162,8 @@ fixture, compile, or static checks as model execution.
 - `psdownload.py` rejects blank output paths before scraping, and the write
   helper also validates output paths before opening files.
 - The write helper also validates output paths before opening files.
+- Scraper publication fsyncs the destination directory after atomic replacement
+  so the new dataset name survives a successful call and subsequent power loss.
 - Review changes touching network requests, downloaded data, model formulas, or
   generated datasets carefully.
 

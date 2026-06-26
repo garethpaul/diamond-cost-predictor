@@ -2,6 +2,7 @@
 import contextlib
 import importlib.util
 import io
+import os
 import pathlib
 import tempfile
 import unittest
@@ -252,6 +253,55 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
             self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
             self.assertEqual(list(output.parent.iterdir()), [output])
+
+    def test_write_diamonds_fsyncs_destination_directory_after_replace(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            events = []
+            directory_descriptor = 9876
+            original_replace = psdownload.os.replace
+            original_open = psdownload.os.open
+            original_fsync = psdownload.os.fsync
+            original_close = psdownload.os.close
+
+            def recording_replace(source, destination):
+                original_replace(source, destination)
+                events.append(('replace', destination))
+
+            def recording_open(path, flags, *args):
+                if path == str(output.parent.resolve()):
+                    events.append(('open', path, flags))
+                    return directory_descriptor
+                return original_open(path, flags, *args)
+
+            def recording_fsync(descriptor):
+                if descriptor == directory_descriptor:
+                    events.append(('fsync-directory', descriptor))
+                    return None
+                return original_fsync(descriptor)
+
+            def recording_close(descriptor):
+                if descriptor == directory_descriptor:
+                    events.append(('close', descriptor))
+                    return None
+                return original_close(descriptor)
+
+            with mock.patch.object(psdownload.os, 'replace', recording_replace):
+                with mock.patch.object(psdownload.os, 'open', recording_open):
+                    with mock.patch.object(psdownload.os, 'fsync', recording_fsync):
+                        with mock.patch.object(psdownload.os, 'close', recording_close):
+                            psdownload.write_diamonds(output, ['replacement'])
+
+            expected_flags = os.O_RDONLY | getattr(os, 'O_DIRECTORY', 0)
+            self.assertEqual(
+                events,
+                [
+                    ('replace', str(output.resolve())),
+                    ('open', str(output.parent.resolve()), expected_flags),
+                    ('fsync-directory', directory_descriptor),
+                    ('close', directory_descriptor),
+                ],
+            )
 
     def test_write_diamonds_rejects_blank_output_path(self):
         with self.assertRaises(ValueError):

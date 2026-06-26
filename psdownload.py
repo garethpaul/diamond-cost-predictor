@@ -156,6 +156,14 @@ def validate_output_path(path):
         raise ValueError("output path must not be blank")
 
 
+def fsync_directory(path):
+    descriptor = os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
 def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
     validate_scrape_args(min_carat, max_carat, timeout)
 
@@ -223,6 +231,7 @@ def write_diamonds(path, diamonds):
 
         os.replace(temporary_path, destination)
         temporary_path = None
+        fsync_directory(output_directory)
     finally:
         if descriptor is not None:
             os.close(descriptor)

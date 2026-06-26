@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-26
+
+- Scraper publication fsyncs the destination directory after atomic replacement
+  so successful output publication includes durable rename metadata.
+- Added an ordering-aware runtime regression for replace, directory open,
+  directory fsync, and descriptor close.
+
 ## 2026-06-25
 
 - Published prediction PDFs only after same-directory staging, nonempty and
