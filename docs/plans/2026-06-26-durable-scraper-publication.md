@@ -1,0 +1,41 @@
+# Durable Scraper Publication
+
+**Status:** Completed
+
+## Goal
+
+Make successful scraper output replacement durable across a subsequent power
+loss by syncing the destination directory after the atomic rename.
+
+## Problem
+
+`write_diamonds` flushed and synced the staged file before `os.replace`, but it
+did not sync the parent directory afterward. On POSIX filesystems, the new
+directory entry can therefore remain outside durable storage even though the
+function reports success.
+
+## Implementation
+
+- Add a small `fsync_directory` helper using a read-only directory descriptor.
+- Call it only after `os.replace` succeeds.
+- Close the directory descriptor in `finally` on both success and fsync failure.
+- Preserve same-directory staging, prior-output protection before replacement,
+  destination-symlink replacement behavior, and temporary-file cleanup.
+
+## Verification
+
+- `test_write_diamonds_fsyncs_destination_directory_after_replace` requires
+  replace → directory open → destination-directory fsync → close ordering.
+- `test_fsync_directory_closes_descriptor_when_fsync_fails` verifies cleanup
+  when the durability operation itself raises.
+- `python3 scripts/test-psdownload.py`
+- `make check`
+- External-working-directory `make check`
+- Hostile mutations for omitted and pre-replacement directory sync
+- `git diff --check`
+
+Implementation head `0e902e743f695204ff923a2092ee1d94cf357323` passed duplicate
+Python 3.10, 3.12, and 3.14 Check matrices plus CodeQL Actions and Python
+analysis on 2026-06-26. The required Codex branch review failed with OpenAI
+HTTP 401 before analysis; an immutable manual review found no correctness,
+security, portability, or cleanup findings.

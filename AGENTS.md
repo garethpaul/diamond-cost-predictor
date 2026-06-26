@@ -53,6 +53,8 @@
 - `psdownload.py` must reject negative reported result totals while preserving zero-result queries.
 - `psdownload.py` must preserve existing output until atomic replacement of a
   fully written and synced same-directory staged file.
+- Scraper publication fsyncs the destination directory after atomic replacement
+  so a reported success includes durable rename metadata.
 - `output.csv` rows must preserve the producer's exact ten-field shape and pass
   finite-positive model validation before `graph.py` loads rpy2.
 - Training rows must stay within color 1 through 6 and clarity 1 through 8.

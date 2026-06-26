@@ -29,6 +29,7 @@ GRAPH_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-graph-category-range-
 MODEL_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-model-category-range-validation.md"
 PREDICTION_PDF_PLAN="$ROOT_DIR/docs/plans/2026-06-25-atomic-prediction-pdf.md"
 PARTIAL_DOWNLOAD_PLAN="$ROOT_DIR/docs/plans/2026-06-25-scraper-partial-download-publication.md"
+DURABLE_SCRAPER_PLAN="$ROOT_DIR/docs/plans/2026-06-26-durable-scraper-publication.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -63,6 +64,7 @@ for path in \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
   "scripts/test-model-input.py" \
+  "docs/plans/2026-06-26-durable-scraper-publication.md" \
   "scripts/test-prediction-pdf-atomic.sh" \
   "scripts/test-prediction-pdf-atomic-mutations.sh" \
   "docs/plans/2026-06-08-diamond-check-wrapper.md" \
@@ -1019,10 +1021,50 @@ if ! grep -Fq "tempfile.mkstemp(" "$ROOT_DIR/psdownload.py" ||
   exit 1
 fi
 
+if ! grep -Fq "def fsync_directory(path):" "$ROOT_DIR/psdownload.py" || \
+  ! grep -Fq 'os.open(path, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))' "$ROOT_DIR/psdownload.py" || \
+  ! grep -Fq "fsync_directory(output_directory)" "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper publication must durably sync the destination directory after replacement." >&2
+  exit 1
+fi
+
+python3 - "$ROOT_DIR/psdownload.py" <<'PY'
+from pathlib import Path
+import sys
+
+source = Path(sys.argv[1]).read_text(encoding='utf-8')
+replace = source.index('os.replace(temporary_path, destination)')
+sync = source.index('fsync_directory(output_directory)', replace)
+if replace >= sync:
+    raise SystemExit('Scraper destination directory must be synced after atomic replacement.')
+PY
+
 if ! grep -Fq "test_write_diamonds_atomically_replaces_output_in_destination_directory" "$SCRAPER_TESTS" ||
   ! grep -Fq "test_write_diamonds_preserves_output_when_record_conversion_fails" "$SCRAPER_TESTS" ||
   ! grep -Fq "test_write_diamonds_preserves_output_when_atomic_replace_fails" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover atomic output, failure preservation, and cleanup." >&2
+  exit 1
+fi
+
+if ! grep -Fq "test_write_diamonds_fsyncs_destination_directory_after_replace" "$SCRAPER_TESTS" || \
+  ! grep -Fq "test_fsync_directory_closes_descriptor_when_fsync_fails" "$SCRAPER_TESTS" || \
+  ! grep -Fq "('fsync-directory', directory_descriptor)" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper tests must cover post-replacement destination-directory durability." >&2
+  exit 1
+fi
+
+for guidance_file in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "Scraper publication fsyncs the destination directory after atomic replacement" "$ROOT_DIR/$guidance_file"; then
+    printf '%s\n' "Repository guidance must document durable scraper publication: $guidance_file" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq "**Status:** Completed" "$DURABLE_SCRAPER_PLAN" || \
+  ! grep -Fq "destination-directory fsync" "$DURABLE_SCRAPER_PLAN" || \
+  ! grep -Fq "test_write_diamonds_fsyncs_destination_directory_after_replace" "$DURABLE_SCRAPER_PLAN" || \
+  ! grep -Fq "passed duplicate" "$DURABLE_SCRAPER_PLAN"; then
+  printf '%s\n' "Durable scraper publication plan must record the completed tested contract." >&2
   exit 1
 fi
 
