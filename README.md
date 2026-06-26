@@ -86,6 +86,11 @@ Optional graph prediction arguments require exactly four finite-positive values,
 with positive integer color and clarity categories, before model input or R work.
 Those categories must remain within color 1 through 6 and clarity 1 through 8,
 matching the committed model input encodings.
+Generated `prediction.pdf` output is staged beside the destination, checked as
+nonempty, durably flushed, and published with atomic replacement. Plotting or
+R-device close failures preserve any previously completed report instead of
+leaving a truncated PDF, and a destination symlink is replaced rather than
+followed to another file.
 
 ## Testing and Verification
 

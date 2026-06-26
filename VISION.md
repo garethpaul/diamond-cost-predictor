@@ -44,6 +44,8 @@ Priority:
 - Keep GitHub Actions aligned with the local Python `make check` baseline
   without persisting the checkout credential
 - Keep the model formula and graph generation easy to inspect
+- Publish model PDFs with same-directory atomic replacement only after a
+  complete nonempty report is closed and durably flushed
 
 Next priorities:
 
@@ -52,7 +54,6 @@ Next priorities:
 - Add README setup, data-source, and reproduction instructions
 - Port scripts to a supported Python version in a dedicated pass
 - Keep structured diamond record parsing covered by regression tests
-- Add checks around input files and model output
 
 Contribution rules:
 

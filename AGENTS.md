@@ -59,6 +59,9 @@
 - `graph.py` must validate optional prediction arguments before model input or rpy2.
 - `graph.py` predictions must stay within color 1 through 6 and
   clarity 1 through 8, matching the committed model encodings.
+- `prediction.pdf` must be staged, checked as nonempty, and atomically replaced
+  only after the R device closes; failures must preserve the prior report, and
+  publication must replace rather than follow a destination symlink.
 
 ## Agent workflow
 

@@ -23,6 +23,59 @@ VALID_ROW = '1,42,0.75,4,5,61.2,57,2,3,1250\n'
 
 
 class ModelInputTests(unittest.TestCase):
+    def test_staged_prediction_pdf_atomically_replaces_existing_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = pathlib.Path(directory) / 'prediction.pdf'
+            destination.write_bytes(b'previous report')
+
+            with GRAPH.staged_prediction_pdf(destination) as staged_path:
+                staged = pathlib.Path(staged_path)
+                self.assertEqual(staged.parent, destination.parent)
+                self.assertNotEqual(staged, destination)
+                staged.write_bytes(b'%PDF-complete report')
+
+            self.assertEqual(destination.read_bytes(), b'%PDF-complete report')
+            self.assertEqual(list(destination.parent.glob('.prediction.pdf.*.tmp')), [])
+
+    def test_staged_prediction_pdf_preserves_existing_output_on_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = pathlib.Path(directory) / 'prediction.pdf'
+            destination.write_bytes(b'previous report')
+
+            with self.assertRaisesRegex(RuntimeError, 'plot failed'):
+                with GRAPH.staged_prediction_pdf(destination) as staged_path:
+                    pathlib.Path(staged_path).write_bytes(b'partial report')
+                    raise RuntimeError('plot failed')
+
+            self.assertEqual(destination.read_bytes(), b'previous report')
+            self.assertEqual(list(destination.parent.glob('.prediction.pdf.*.tmp')), [])
+
+    def test_staged_prediction_pdf_rejects_empty_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = pathlib.Path(directory) / 'prediction.pdf'
+            destination.write_bytes(b'previous report')
+
+            with self.assertRaisesRegex(ValueError, 'prediction PDF must be nonempty'):
+                with GRAPH.staged_prediction_pdf(destination):
+                    pass
+
+            self.assertEqual(destination.read_bytes(), b'previous report')
+            self.assertEqual(list(destination.parent.glob('.prediction.pdf.*.tmp')), [])
+
+    def test_staged_prediction_pdf_replaces_symlink_without_overwriting_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = pathlib.Path(directory) / 'prediction.pdf'
+            symlink_target = pathlib.Path(directory) / 'outside-report.pdf'
+            symlink_target.write_bytes(b'external report')
+            destination.symlink_to(symlink_target)
+
+            with GRAPH.staged_prediction_pdf(destination) as staged_path:
+                pathlib.Path(staged_path).write_bytes(b'%PDF-local report')
+
+            self.assertFalse(destination.is_symlink())
+            self.assertEqual(destination.read_bytes(), b'%PDF-local report')
+            self.assertEqual(symlink_target.read_bytes(), b'external report')
+
     def test_graph_prediction_args_accept_none_or_four_valid_values(self):
         self.assertIsNone(GRAPH.parse_prediction_args(['graph.py']))
         for color, clarity in ((1, 1), (4, 5), (6, 8)):
