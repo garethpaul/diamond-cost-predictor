@@ -197,9 +197,15 @@ def collect_diamonds(min_carat, max_carat, timeout, endpoint=None):
                         found_data_marker = True
                     elif found_data_marker:
                         found_data_marker = False
-                        diamonds.append(line.strip())
+                        diamond = line.strip()
+                        if not diamond:
+                            raise RuntimeError("malformed diamond page: data marker missing record")
+                        diamonds.append(diamond)
                     elif "We have " in line:
                         total_for_query = parse_total(line, total_for_query)
+
+                if found_data_marker:
+                    raise RuntimeError("malformed diamond page: data marker missing record")
 
             found_total += total_for_query
 
