@@ -27,6 +27,7 @@ NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-resu
 GRAPH_CLI_PLAN="$ROOT_DIR/docs/plans/2026-06-15-graph-cli-validation.md"
 GRAPH_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-graph-category-range-validation.md"
 MODEL_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-model-category-range-validation.md"
+PREDICTION_PDF_PLAN="$ROOT_DIR/docs/plans/2026-06-25-atomic-prediction-pdf.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -61,6 +62,8 @@ for path in \
   "scripts/test-safe-parsing.py" \
   "scripts/test-psdownload.py" \
   "scripts/test-model-input.py" \
+  "scripts/test-prediction-pdf-atomic.sh" \
+  "scripts/test-prediction-pdf-atomic-mutations.sh" \
   "docs/plans/2026-06-08-diamond-check-wrapper.md" \
   "docs/plans/2026-06-08-pricescope-https-baseline.md" \
   "docs/plans/2026-06-08-numeric-field-validation.md" \
@@ -85,6 +88,8 @@ for path in \
   "docs/plans/2026-06-15-graph-cli-validation.md" \
   "docs/plans/2026-06-16-graph-category-range-validation.md" \
   "docs/plans/2026-06-16-model-category-range-validation.md" \
+  "docs/plans/2026-06-25-atomic-prediction-pdf-design.md" \
+  "docs/plans/2026-06-25-atomic-prediction-pdf.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
 done
@@ -113,6 +118,9 @@ if ! grep -Fq "EXPECTED_FIELD_COUNT = 10" "$MODEL_INPUT" ||
 fi
 
 for model_test in \
+  "test_staged_prediction_pdf_atomically_replaces_existing_output" \
+  "test_staged_prediction_pdf_preserves_existing_output_on_failure" \
+  "test_staged_prediction_pdf_rejects_empty_output" \
   "test_graph_prediction_args_accept_none_or_four_valid_values" \
   "test_graph_prediction_args_reject_partial_and_extra_values" \
   "test_graph_prediction_args_reject_invalid_numeric_values" \
@@ -136,6 +144,67 @@ for model_test in \
     exit 1
   fi
 done
+
+for prediction_pdf_contract in \
+  "def staged_prediction_pdf(destination):" \
+  "output_directory = os.path.realpath(os.path.dirname(destination) or '.')" \
+  "destination = os.path.join(output_directory, output_name)" \
+  "dir=output_directory," \
+  "if os.path.getsize(staged_path) == 0:" \
+  "os.fsync(staged_file.fileno())" \
+  "os.replace(staged_path, destination)" \
+  "os.unlink(staged_path)" \
+  "with staged_prediction_pdf('prediction.pdf') as staged_pdf:" \
+  "ro.r.pdf(staged_pdf)" \
+  "ro.r('dev.off()')"; do
+  if ! grep -Fq "$prediction_pdf_contract" "$GRAPH"; then
+    printf '%s\n' "graph.py must retain atomic prediction PDF contract: $prediction_pdf_contract" >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq '$(ROOT)scripts/test-prediction-pdf-atomic.sh' "$MAKEFILE" ||
+  ! grep -Fq '$(ROOT)scripts/test-prediction-pdf-atomic-mutations.sh' "$MAKEFILE"; then
+  printf '%s\n' "Make test must retain atomic prediction PDF verification." >&2
+  exit 1
+fi
+
+if ! grep -Fq "output is staged beside the destination" "$README" ||
+  ! grep -Fq "Publish model PDFs with same-directory atomic replacement" "$VISION" ||
+  ! grep -Fq 'prediction.pdf` must be staged, checked as nonempty, and atomically replaced' "$ROOT_DIR/AGENTS.md" ||
+  ! grep -Fq "Published prediction PDFs only after same-directory staging" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Maintained guidance must document atomic prediction PDF publication." >&2
+  exit 1
+fi
+
+prediction_pdf_status=$(sed -n 's/^\*\*Status:\*\* //p' "$PREDICTION_PDF_PLAN")
+case "$prediction_pdf_status" in
+  "Pending hosted verification")
+    if ! grep -Fq "Exact-head hosted checks remain pending." "$PREDICTION_PDF_PLAN"; then
+      printf '%s\n' "Pending prediction PDF plan must record pending hosted checks." >&2
+      exit 1
+    fi
+    ;;
+  Completed)
+    for prediction_pdf_evidence in \
+      "Exact-head hosted Check and CodeQL passed." \
+      "eight hostile atomic prediction PDF mutations were rejected"; do
+      if ! grep -Fq "$prediction_pdf_evidence" "$PREDICTION_PDF_PLAN"; then
+        printf '%s\n' "Completed prediction PDF plan must retain evidence: $prediction_pdf_evidence" >&2
+        exit 1
+      fi
+    done
+    ;;
+  *)
+    printf '%s\n' "Prediction PDF plan must be pending hosted verification or completed." >&2
+    exit 1
+    ;;
+esac
+
+if ! grep -Fq "No R model or prediction PDF execution is claimed." "$PREDICTION_PDF_PLAN"; then
+  printf '%s\n' "Prediction PDF plan must retain the local R runtime nonclaim." >&2
+  exit 1
+fi
 
 for graph_cli_contract in \
   "def parse_prediction_args(argv):" \
@@ -309,7 +378,7 @@ if ! grep -Fq "runs-on: ubuntu-24.04" "$CI_WORKFLOW"; then
 fi
 
 if ! grep -Fq 'ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))' "$MAKEFILE" ||
-  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 13 ]; then
+  [ "$(grep -o '\$(ROOT)' "$MAKEFILE" | wc -l | tr -d ' ')" -ne 15 ]; then
   printf '%s\n' "Make verification must resolve scripts and Python files from the repository root." >&2
   exit 1
 fi

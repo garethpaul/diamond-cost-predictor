@@ -1,7 +1,36 @@
+from contextlib import contextmanager
 import math
+import os
 import sys
+import tempfile
 
 from model_input import CLARITY_RANGE, COLOR_RANGE, load_model_rows
+
+
+@contextmanager
+def staged_prediction_pdf(destination):
+    destination = os.fspath(destination)
+    output_name = os.path.basename(destination)
+    output_directory = os.path.realpath(os.path.dirname(destination) or '.')
+    destination = os.path.join(output_directory, output_name)
+    descriptor, staged_path = tempfile.mkstemp(
+        prefix='.{0}.'.format(output_name),
+        suffix='.tmp',
+        dir=output_directory,
+    )
+    os.close(descriptor)
+
+    try:
+        yield staged_path
+        if os.path.getsize(staged_path) == 0:
+            raise ValueError('prediction PDF must be nonempty')
+        with open(staged_path, 'rb+') as staged_file:
+            os.fsync(staged_file.fileno())
+        os.replace(staged_path, destination)
+        staged_path = None
+    finally:
+        if staged_path is not None and os.path.exists(staged_path):
+            os.unlink(staged_path)
 
 
 def validate_category(value, field_name, allowed_range):
@@ -104,43 +133,46 @@ def main(argv):
     comp = stats.lm("pred ~ price")
 
     print("Writing graph to pdf")
-    ro.r.pdf('prediction.pdf')
-    ro.r.plot(
-        [x for x in pred],
-        [y for y in price],
-        main="Actual vs Predicted Price",
-        xlab="Predicted Price",
-        ylab="Actual Price",
-        cex=0.5,
-    )
-    ro.r.abline(comp, col="green", lty="dotted", lwd=3)
+    with staged_prediction_pdf('prediction.pdf') as staged_pdf:
+        ro.r.pdf(staged_pdf)
+        try:
+            ro.r.plot(
+                [x for x in pred],
+                [y for y in price],
+                main="Actual vs Predicted Price",
+                xlab="Predicted Price",
+                ylab="Actual Price",
+                cex=0.5,
+            )
+            ro.r.abline(comp, col="green", lty="dotted", lwd=3)
 
-    if prediction_args is not None:
-        ycar, ycol, ycla, ypri = prediction_args
-        ypred = validate_prediction_price(
-            coef[0] + coef[1] * ycar + coef[2] * ycol + coef[3] * ycla
-        )
-        sdiam = (
-            "Your Diamond: " + str(ycar) + " Carats, " + str(ycol) +
-            " Color, " + str(ycla) + " Clarity, $" + str(ypri)
-        )
-        spred = "Predicted Price = $" + str(int(round(ypred)))
-        sdiff = "Difference = $" + str(int(ypred - ypri))
-        ssavings = "Savings = " + str(int(round(100 * ((ypred - ypri) / ypri)))) + "%"
-        ro.r.points(ypred, ypri, col="red", pch='x', cex=1)
-        ro.r.legend(
-            "bottomright",
-            legend=[sdiam, spred, sdiff, ssavings],
-            bg="white",
-            cex=0.5,
-        )
+            if prediction_args is not None:
+                ycar, ycol, ycla, ypri = prediction_args
+                ypred = validate_prediction_price(
+                    coef[0] + coef[1] * ycar + coef[2] * ycol + coef[3] * ycla
+                )
+                sdiam = (
+                    "Your Diamond: " + str(ycar) + " Carats, " + str(ycol) +
+                    " Color, " + str(ycla) + " Clarity, $" + str(ypri)
+                )
+                spred = "Predicted Price = $" + str(int(round(ypred)))
+                sdiff = "Difference = $" + str(int(ypred - ypri))
+                ssavings = "Savings = " + str(int(round(100 * ((ypred - ypri) / ypri)))) + "%"
+                ro.r.points(ypred, ypri, col="red", pch='x', cex=1)
+                ro.r.legend(
+                    "bottomright",
+                    legend=[sdiam, spred, sdiff, ssavings],
+                    bg="white",
+                    cex=0.5,
+                )
 
-    ro.r.legend(
-        "top",
-        legend=[formula, ars, "Sample Size = " + str(len(price)) + " Diamonds"],
-        bg="white",
-    )
-    ro.r('dev.off()')
+            ro.r.legend(
+                "top",
+                legend=[formula, ars, "Sample Size = " + str(len(price)) + " Diamonds"],
+                bg="white",
+            )
+        finally:
+            ro.r('dev.off()')
     print("Finished!")
 
 

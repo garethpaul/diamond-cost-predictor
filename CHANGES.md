@@ -2,6 +2,8 @@
 
 ## 2026-06-25
 
+- Published prediction PDFs only after same-directory staging, nonempty and
+  durable-file checks, R-device closure, and atomic replacement.
 - Revalidated the shared converter and model-input category schema across the
   full parser, scraper, model-input, compilation, and hosted Python matrix.
 
