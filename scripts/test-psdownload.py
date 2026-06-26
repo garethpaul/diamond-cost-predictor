@@ -168,6 +168,38 @@ class PriceScopeDownloadTests(unittest.TestCase):
         self.assertEqual(diamonds, [])
         self.assertEqual(found_total, 500)
 
+    def test_collect_diamonds_aborts_on_failed_requested_page(self):
+        requested_pages = []
+
+        def read_page(url, timeout):
+            del timeout
+            page = int(parse_qs(urlparse(url).query)['page'][0])
+            requested_pages.append(page)
+            return ['We have 50 <b>diamonds</b>'] if page == 1 else None
+
+        with mock.patch.object(psdownload, 'DIAMOND_TYPES', ['BR']):
+            with mock.patch.object(psdownload, 'read_lines', read_page):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    with self.assertRaisesRegex(RuntimeError, 'failed to download requested diamond page'):
+                        psdownload.collect_diamonds(0.25, 0.255, 1)
+
+        self.assertEqual(requested_pages, [1, 2])
+
+    def test_main_preserves_existing_output_when_collection_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = pathlib.Path(directory) / 'diamonds.txt'
+            output.write_text('previous\n', encoding='utf-8')
+
+            with mock.patch.object(
+                psdownload,
+                'collect_diamonds',
+                side_effect=RuntimeError('failed to download requested diamond page'),
+            ):
+                with self.assertRaisesRegex(RuntimeError, 'failed to download requested diamond page'):
+                    psdownload.main(['0.25', '0.30', '--output', str(output)])
+
+            self.assertEqual(output.read_text(encoding='utf-8'), 'previous\n')
+
     def test_drange_rejects_invalid_or_non_advancing_steps(self):
         with self.assertRaises(ValueError):
             list(psdownload.drange(0.25, 0.30, 0))
@@ -233,7 +265,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
         psdownload.urlopen = failing_urlopen
         try:
-            self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+            self.assertIsNone(psdownload.read_lines('https://example.test/', 1))
         finally:
             psdownload.urlopen = original_urlopen
 
@@ -265,6 +297,23 @@ class PriceScopeDownloadTests(unittest.TestCase):
         finally:
             psdownload.urlopen = original_urlopen
 
+    def test_read_lines_preserves_valid_empty_response(self):
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_value, traceback):
+                return False
+
+            def read(self, limit):
+                return b''
+
+            def geturl(self):
+                return 'https://example.test/'
+
+        with mock.patch.object(psdownload, 'urlopen', lambda url, timeout: FakeResponse()):
+            self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+
     def test_read_lines_rejects_malformed_utf8_response(self):
         original_urlopen = psdownload.urlopen
 
@@ -285,7 +334,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
         try:
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
-                self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+                self.assertIsNone(psdownload.read_lines('https://example.test/', 1))
             self.assertEqual(
                 output.getvalue(),
                 '   Failed to download page: response was not valid UTF-8\n',
@@ -313,7 +362,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
         psdownload.urlopen = lambda url, timeout: FakeResponse()
         try:
             with contextlib.redirect_stdout(io.StringIO()):
-                self.assertEqual(psdownload.read_lines('https://example.test/', 1), [])
+                self.assertIsNone(psdownload.read_lines('https://example.test/', 1))
         finally:
             psdownload.urlopen = original_urlopen
 
@@ -351,7 +400,7 @@ class PriceScopeDownloadTests(unittest.TestCase):
                 psdownload.urlopen = lambda url, timeout, response=response: response
                 output = io.StringIO()
                 with contextlib.redirect_stdout(output):
-                    self.assertEqual(psdownload.read_lines('https://example.test/source', 1), [])
+                    self.assertIsNone(psdownload.read_lines('https://example.test/source', 1))
                 self.assertEqual(response.read_calls, 0)
                 self.assertEqual(
                     output.getvalue(),

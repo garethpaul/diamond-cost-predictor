@@ -27,6 +27,7 @@ NONNEGATIVE_TOTAL_PLAN="$ROOT_DIR/docs/plans/2026-06-15-scraper-nonnegative-resu
 GRAPH_CLI_PLAN="$ROOT_DIR/docs/plans/2026-06-15-graph-cli-validation.md"
 GRAPH_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-graph-category-range-validation.md"
 MODEL_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-model-category-range-validation.md"
+PARTIAL_DOWNLOAD_PLAN="$ROOT_DIR/docs/plans/2026-06-25-scraper-partial-download-publication.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -85,8 +86,20 @@ for path in \
   "docs/plans/2026-06-15-graph-cli-validation.md" \
   "docs/plans/2026-06-16-graph-category-range-validation.md" \
   "docs/plans/2026-06-16-model-category-range-validation.md" \
+  "docs/plans/2026-06-25-scraper-partial-download-publication-design.md" \
+  "docs/plans/2026-06-25-scraper-partial-download-publication.md" \
   "docs/plans/2026-06-09-output-path-validation.md"; do
   require_file "$path"
+done
+
+for scraper_failure_test in \
+  "test_collect_diamonds_aborts_on_failed_requested_page" \
+  "test_main_preserves_existing_output_when_collection_fails" \
+  "test_read_lines_preserves_valid_empty_response"; do
+  if ! grep -Fq "$scraper_failure_test" "$SCRAPER_TESTS"; then
+    printf '%s\n' "Scraper failure tests must retain case: $scraper_failure_test" >&2
+    exit 1
+  fi
 done
 
 if ! grep -Fq "COLOR_RANGE = (1, 6)" "$MODEL_DOMAIN" ||
@@ -505,6 +518,27 @@ fi
 
 if ! grep -Fq "blank output paths" "$README"; then
   printf '%s\n' "README must document scraper output path validation." >&2
+  exit 1
+fi
+
+if [ "$(grep -Fc 'return None' "$ROOT_DIR/psdownload.py")" -lt 4 ] ||
+  ! grep -Fq 'if lines is None:' "$ROOT_DIR/psdownload.py" ||
+  ! grep -Fq 'raise RuntimeError("failed to download requested diamond page")' "$ROOT_DIR/psdownload.py"; then
+  printf '%s\n' "Scraper must distinguish failed page acquisition and abort before partial publication." >&2
+  exit 1
+fi
+
+if ! grep -Fq "Incomplete scrapes never replace an existing output" "$README" ||
+  ! grep -Fq "Failed scraper pages must abort collection before output replacement" "$ROOT_DIR/AGENTS.md" ||
+  ! grep -Fq "Prevent incomplete scraper runs from replacing prior datasets" "$VISION" ||
+  ! grep -Fq "Prevented failed page downloads from publishing partial datasets" "$ROOT_DIR/CHANGES.md"; then
+  printf '%s\n' "Partial-download publication guidance must remain synchronized." >&2
+  exit 1
+fi
+
+if ! grep -Eq '^\*\*Status:\*\* (Pending hosted verification|Completed)$' "$PARTIAL_DOWNLOAD_PLAN" ||
+  ! grep -Fq "failed page download" "$PARTIAL_DOWNLOAD_PLAN"; then
+  printf '%s\n' "Partial-download publication plan must record status and local evidence." >&2
   exit 1
 fi
 
