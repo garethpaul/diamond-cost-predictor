@@ -6,6 +6,9 @@
   so successful output publication includes durable rename metadata.
 - Added an ordering-aware runtime regression for replace, directory open,
   directory fsync, descriptor close, and fsync-failure cleanup.
+- Validated the exact implementation head with duplicate Python 3.10/3.12/3.14
+  matrices, CodeQL Actions and Python analysis, and a clean immutable manual
+  review; Codex review failed with HTTP 401 before analysis.
 
 ## 2026-06-25
 

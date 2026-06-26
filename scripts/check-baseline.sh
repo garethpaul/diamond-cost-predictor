@@ -1060,10 +1060,11 @@ for guidance_file in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
   fi
 done
 
-if ! grep -Fq "**Status:** Pending hosted verification" "$DURABLE_SCRAPER_PLAN" || \
+if ! grep -Fq "**Status:** Completed" "$DURABLE_SCRAPER_PLAN" || \
   ! grep -Fq "destination-directory fsync" "$DURABLE_SCRAPER_PLAN" || \
-  ! grep -Fq "test_write_diamonds_fsyncs_destination_directory_after_replace" "$DURABLE_SCRAPER_PLAN"; then
-  printf '%s\n' "Durable scraper publication plan must record the pending tested contract." >&2
+  ! grep -Fq "test_write_diamonds_fsyncs_destination_directory_after_replace" "$DURABLE_SCRAPER_PLAN" || \
+  ! grep -Fq "passed duplicate" "$DURABLE_SCRAPER_PLAN"; then
+  printf '%s\n' "Durable scraper publication plan must record the completed tested contract." >&2
   exit 1
 fi
 

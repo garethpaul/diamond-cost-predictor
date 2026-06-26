@@ -1,6 +1,6 @@
 # Durable Scraper Publication
 
-**Status:** Pending hosted verification
+**Status:** Completed
 
 ## Goal
 
@@ -34,4 +34,8 @@ function reports success.
 - Hostile mutations for omitted and pre-replacement directory sync
 - `git diff --check`
 
-Exact-head hosted Python matrices and CodeQL remain pending.
+Implementation head `0e902e743f695204ff923a2092ee1d94cf357323` passed duplicate
+Python 3.10, 3.12, and 3.14 Check matrices plus CodeQL Actions and Python
+analysis on 2026-06-26. The required Codex branch review failed with OpenAI
+HTTP 401 before analysis; an immutable manual review found no correctness,
+security, portability, or cleanup findings.
