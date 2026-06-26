@@ -186,6 +186,20 @@ class PriceScopeDownloadTests(unittest.TestCase):
 
         self.assertEqual(requested_pages, [1, 2])
 
+    def test_collect_diamonds_rejects_malformed_data_marker_pairs(self):
+        malformed_pages = (
+            ['diamond-data'],
+            ['diamond-data', '   '],
+        )
+
+        for lines in malformed_pages:
+            with self.subTest(lines=lines):
+                with mock.patch.object(psdownload, 'DIAMOND_TYPES', ['BR']):
+                    with mock.patch.object(psdownload, 'read_lines', return_value=lines):
+                        with contextlib.redirect_stdout(io.StringIO()):
+                            with self.assertRaisesRegex(RuntimeError, 'malformed diamond page'):
+                                psdownload.collect_diamonds(0.25, 0.255, 1)
+
     def test_main_preserves_existing_output_when_collection_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             output = pathlib.Path(directory) / 'diamonds.txt'

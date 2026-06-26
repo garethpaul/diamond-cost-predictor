@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-26 - Reject malformed scraper marker pairs
+
+- Malformed diamond-data marker pairs abort collection before output replacement.
+- Rejected page-ending markers and blank paired records so structurally
+  truncated responses cannot publish incomplete datasets.
+- Added test-first scraper coverage plus design and implementation records.
+- Python 3.11.8 passes the focused and full root/external gates; independent
+  removal of either structural guard fails the intended regression.
+
 ## 2026-06-26
 
 - Scraper publication fsyncs the destination directory after atomic replacement

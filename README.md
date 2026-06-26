@@ -74,6 +74,7 @@ and published with atomic replacement, so a serialization or publication
 failure preserves an existing dataset instead of truncating it.
 Incomplete scrapes never replace an existing output: transport, response-origin,
 size, or UTF-8 failures abort collection before the atomic writer runs.
+Malformed diamond-data marker pairs abort collection before output replacement.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.

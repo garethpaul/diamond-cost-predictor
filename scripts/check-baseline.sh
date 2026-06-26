@@ -30,6 +30,8 @@ MODEL_CATEGORY_RANGE_PLAN="$ROOT_DIR/docs/plans/2026-06-16-model-category-range-
 PREDICTION_PDF_PLAN="$ROOT_DIR/docs/plans/2026-06-25-atomic-prediction-pdf.md"
 PARTIAL_DOWNLOAD_PLAN="$ROOT_DIR/docs/plans/2026-06-25-scraper-partial-download-publication.md"
 DURABLE_SCRAPER_PLAN="$ROOT_DIR/docs/plans/2026-06-26-durable-scraper-publication.md"
+MARKER_PAIR_PLAN="$ROOT_DIR/docs/plans/2026-06-26-scraper-marker-pair-validation.md"
+MARKER_PAIR_DESIGN="$ROOT_DIR/docs/plans/2026-06-26-scraper-marker-pair-validation-design.md"
 CI_WORKFLOW="$ROOT_DIR/.github/workflows/check.yml"
 MAKEFILE="$ROOT_DIR/Makefile"
 PARSER="$ROOT_DIR/csv.py"
@@ -65,6 +67,8 @@ for path in \
   "scripts/test-psdownload.py" \
   "scripts/test-model-input.py" \
   "docs/plans/2026-06-26-durable-scraper-publication.md" \
+  "docs/plans/2026-06-26-scraper-marker-pair-validation.md" \
+  "docs/plans/2026-06-26-scraper-marker-pair-validation-design.md" \
   "scripts/test-prediction-pdf-atomic.sh" \
   "scripts/test-prediction-pdf-atomic-mutations.sh" \
   "docs/plans/2026-06-08-diamond-check-wrapper.md" \
@@ -604,6 +608,30 @@ if ! grep -Fq "Incomplete scrapes never replace an existing output" "$README" ||
   ! grep -Fq "Prevent incomplete scraper runs from replacing prior datasets" "$VISION" ||
   ! grep -Fq "Prevented failed page downloads from publishing partial datasets" "$ROOT_DIR/CHANGES.md"; then
   printf '%s\n' "Partial-download publication guidance must remain synchronized." >&2
+  exit 1
+fi
+
+if [ "$(grep -Fc 'raise RuntimeError("malformed diamond page: data marker missing record")' "$ROOT_DIR/psdownload.py")" -ne 2 ] ||
+  ! grep -Fq "test_collect_diamonds_rejects_malformed_data_marker_pairs" "$SCRAPER_TESTS" ||
+  ! grep -Fq "['diamond-data', '   ']" "$SCRAPER_TESTS"; then
+  printf '%s\n' "Scraper must reject blank and orphaned diamond-data marker pairs." >&2
+  exit 1
+fi
+
+marker_pair_guidance='Malformed diamond-data marker pairs abort collection before output replacement.'
+for marker_pair_doc in AGENTS.md README.md SECURITY.md VISION.md CHANGES.md; do
+  if ! grep -Fq "$marker_pair_guidance" "$ROOT_DIR/$marker_pair_doc"; then
+    printf '%s\n' "$marker_pair_doc must document malformed marker-pair rejection." >&2
+    exit 1
+  fi
+done
+
+if ! grep -Fq '**Status:** Completed' "$MARKER_PAIR_PLAN" ||
+  ! grep -Fq 'all 36 scraper tests pass' "$MARKER_PAIR_PLAN" ||
+  ! grep -Fq 'blank-record guard or the orphan-marker guard' "$MARKER_PAIR_PLAN" ||
+  ! grep -Fq 'external-directory `make check`' "$MARKER_PAIR_PLAN" ||
+  ! grep -Fq 'Approaches Considered' "$MARKER_PAIR_DESIGN"; then
+  printf '%s\n' "Marker-pair design and plan must retain completed verification evidence." >&2
   exit 1
 fi
 

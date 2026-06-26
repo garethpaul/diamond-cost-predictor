@@ -46,6 +46,7 @@ Pagination must stop at exact reported result boundaries so the scraper does
 not issue redundant source requests that increase rate-limit exposure.
 Reported scraper result totals must never be negative; invalid counts retain
 the bounded fallback instead of truncating pagination or corrupting summaries.
+Malformed diamond-data marker pairs abort collection before output replacement.
 Scraper publication fsyncs the destination directory after atomic replacement;
 do not treat a file-only fsync as durable rename publication.
 Graph prediction arguments must be validated before model input or R execution
