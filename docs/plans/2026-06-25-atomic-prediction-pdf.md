@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
-**Status:** Pending hosted verification
+**Status:** Completed
 
 **Goal:** Preserve an existing `prediction.pdf` unless a complete nonempty replacement report is successfully generated.
 
@@ -111,4 +111,4 @@ completed and merging.
   durable flush, atomic replace, cleanup, staged R-device routing, and
   guaranteed device closure.
 - No R model or prediction PDF execution is claimed.
-- Exact-head hosted checks remain pending.
+- Exact-head hosted Check and CodeQL passed.
