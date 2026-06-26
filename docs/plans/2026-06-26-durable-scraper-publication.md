@@ -26,6 +26,8 @@ function reports success.
 
 - `test_write_diamonds_fsyncs_destination_directory_after_replace` requires
   replace → directory open → destination-directory fsync → close ordering.
+- `test_fsync_directory_closes_descriptor_when_fsync_fails` verifies cleanup
+  when the durability operation itself raises.
 - `python3 scripts/test-psdownload.py`
 - `make check`
 - External-working-directory `make check`

@@ -5,7 +5,7 @@
 - Scraper publication fsyncs the destination directory after atomic replacement
   so successful output publication includes durable rename metadata.
 - Added an ordering-aware runtime regression for replace, directory open,
-  directory fsync, and descriptor close.
+  directory fsync, descriptor close, and fsync-failure cleanup.
 
 ## 2026-06-25
 

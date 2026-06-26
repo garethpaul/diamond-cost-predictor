@@ -303,6 +303,17 @@ class PriceScopeDownloadTests(unittest.TestCase):
                 ],
             )
 
+    def test_fsync_directory_closes_descriptor_when_fsync_fails(self):
+        directory_descriptor = 9876
+
+        with mock.patch.object(psdownload.os, 'open', return_value=directory_descriptor):
+            with mock.patch.object(psdownload.os, 'fsync', side_effect=OSError('fsync failed')):
+                with mock.patch.object(psdownload.os, 'close') as close:
+                    with self.assertRaisesRegex(OSError, 'fsync failed'):
+                        psdownload.fsync_directory('/tmp/output')
+
+        close.assert_called_once_with(directory_descriptor)
+
     def test_write_diamonds_rejects_blank_output_path(self):
         with self.assertRaises(ValueError):
             psdownload.write_diamonds('   ', [])

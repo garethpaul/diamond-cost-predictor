@@ -1047,6 +1047,7 @@ if ! grep -Fq "test_write_diamonds_atomically_replaces_output_in_destination_dir
 fi
 
 if ! grep -Fq "test_write_diamonds_fsyncs_destination_directory_after_replace" "$SCRAPER_TESTS" || \
+  ! grep -Fq "test_fsync_directory_closes_descriptor_when_fsync_fails" "$SCRAPER_TESTS" || \
   ! grep -Fq "('fsync-directory', directory_descriptor)" "$SCRAPER_TESTS"; then
   printf '%s\n' "Scraper tests must cover post-replacement destination-directory durability." >&2
   exit 1
