@@ -1,6 +1,6 @@
 # Scraper Partial Download Publication Implementation Plan
 
-**Status:** Pending hosted verification
+**Status:** Completed
 
 > **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
 
@@ -60,4 +60,7 @@
   UTF-8, response-origin, and omitted collection-abort regressions.
 - Repository-root and external-Makefile `make check`, shell syntax, and diff
   checks passed under the local Python runtime.
-- Exact-head hosted checks remain pending.
+- Exact-head Check runs `28219912055` and `28219913116` passed Python 3.10,
+  3.12, and 3.14.
+- Exact-head CodeQL run `28219912547` passed Actions and Python analysis.
+- Exact-head hosted Check and CodeQL passed.
