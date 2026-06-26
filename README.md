@@ -72,6 +72,8 @@ rejects blank output paths before any download loop is started.
 Completed downloads are staged beside the requested output, durably flushed,
 and published with atomic replacement, so a serialization or publication
 failure preserves an existing dataset instead of truncating it.
+Incomplete scrapes never replace an existing output: transport, response-origin,
+size, or UTF-8 failures abort collection before the atomic writer runs.
 
 The modeling scripts still depend on R/rpy2. Keep runtime changes scoped and
 document the exact Python/R environment used when updating that path.
@@ -138,6 +140,8 @@ fixture, compile, or static checks as model execution.
   rejects endpoint overrides without a host, with embedded credentials, or with
   query strings or fragments.
 - `psdownload.py` handles page-level timeout or URL errors.
+- `psdownload.py` distinguishes failed page acquisition from a valid empty body
+  and aborts the scrape before partial output publication.
 - `psdownload.py` rejects redirects whose final response origin downgrades from
   HTTPS or changes host or port before reading the response body.
 - `psdownload.py` rejects page responses larger than 2 MiB before decoding.

@@ -2,6 +2,8 @@
 
 ## 2026-06-25
 
+- Prevented failed page downloads from publishing partial datasets over an
+  existing scraper output while preserving valid empty responses.
 - Revalidated the shared converter and model-input category schema across the
   full parser, scraper, model-input, compilation, and hosted Python matrix.
 
