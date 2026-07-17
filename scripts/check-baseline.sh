@@ -40,6 +40,7 @@ SCRAPER_TESTS="$ROOT_DIR/scripts/test-psdownload.py"
 MODEL_DOMAIN="$ROOT_DIR/model_domain.py"
 MODEL_INPUT="$ROOT_DIR/model_input.py"
 MODEL_INPUT_TESTS="$ROOT_DIR/scripts/test-model-input.py"
+PREDICTION_PDF_MUTATIONS="$ROOT_DIR/scripts/test-prediction-pdf-atomic-mutations.sh"
 GRAPH="$ROOT_DIR/graph.py"
 
 require_file() {
@@ -187,6 +188,31 @@ if ! grep -Fq '$(ROOT)scripts/test-prediction-pdf-atomic.sh' "$MAKEFILE" ||
   printf '%s\n' "Make test must retain atomic prediction PDF verification." >&2
   exit 1
 fi
+
+# The hostile mutation harness is the positive control that proves
+# scripts/test-prediction-pdf-atomic.sh actually rejects regressions rather than
+# merely printing success, so it is the root of trust for the atomic prediction
+# PDF contract and nothing else can verify it. Executing it (see the end of this
+# script) proves only that it ran; these pins prove it still plants every defect
+# and still fails when one is accepted, so it cannot be reduced to a stub that
+# exits 0.
+for prediction_pdf_mutation in \
+  "expect_rejected cross-directory-staging" \
+  "expect_rejected followed-destination-symlink" \
+  "expect_rejected empty-output-accepted" \
+  "expect_rejected missing-durable-flush" \
+  "expect_rejected non-atomic-publication" \
+  "expect_rejected leaked-staging-file" \
+  "expect_rejected direct-destination-write" \
+  "expect_rejected missing-device-finally" \
+  'if "$TMP_DIR/repo/scripts/test-prediction-pdf-atomic.sh" >"$TMP_DIR/$name.out" 2>&1; then' \
+  "Hostile atomic prediction PDF mutation was accepted:" \
+  "Mutation source was not found:"; do
+  if ! grep -Fq "$prediction_pdf_mutation" "$PREDICTION_PDF_MUTATIONS"; then
+    printf '%s\n' "Atomic prediction PDF mutation harness must retain: $prediction_pdf_mutation" >&2
+    exit 1
+  fi
+done
 
 if ! grep -Fq "output is staged beside the destination" "$README" ||
   ! grep -Fq "Publish model PDFs with same-directory atomic replacement" "$VISION" ||
@@ -1192,5 +1218,16 @@ done
 python3 -m py_compile "$PARSER" "$TESTS" "$SCRAPER_TESTS" "$ROOT_DIR/psdownload.py" "$MODEL_DOMAIN" "$MODEL_INPUT" "$ROOT_DIR/graph.py" "$ROOT_DIR/lm.py"
 python3 "$TESTS"
 python3 "$SCRAPER_TESTS"
+
+# Execute the atomic prediction PDF verification rather than only asserting the
+# Makefile mentions it. The hostile mutation harness runs the unmodified
+# candidate's scripts/test-prediction-pdf-atomic.sh (which in turn executes
+# scripts/test-model-input.py) before planting each defect, so this single
+# invocation observes all three runners actually executing and proves the
+# contract test still rejects real regressions. Without it, the Makefile
+# recipe lines above are the only thing that runs the harness, and the
+# grep -Fq pins on those lines still pass if an invocation is prefixed with
+# '@echo ' or relocated verbatim into an unused target.
+"$ROOT_DIR/scripts/test-prediction-pdf-atomic-mutations.sh"
 
 printf '%s\n' "Diamond safe parsing baseline checks passed."
